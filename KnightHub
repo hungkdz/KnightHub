@@ -1,0 +1,93 @@
+local localPlayer = game.Players.LocalPlayer
+
+-- Create the ScreenGui
+local ic = Instance.new("ScreenGui")
+ic.Parent = game.CoreGui
+ic.Name = "knight"
+ic.ClipToDeviceSafeArea = true
+ic.Enabled = true
+ic.ResetOnSpawn = true
+ic.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ic.Archivable = true
+ic.AutoLocalize = true
+
+-- Create Frame
+local ic2 = Instance.new("Frame")
+ic2.Parent = ic
+ic2.Name = "dz"
+ic2.AnchorPoint = Vector2.new(0, 1)
+ic2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ic2.BackgroundTransparency = 0.25
+ic2.BorderSizePixel = 1
+ic2.Position = UDim2.new(0, 15, 0.2, 5)
+ic2.Size = UDim2.new(0, 50, 0, 50)
+
+-- Round corners
+local ic3 = Instance.new("UICorner")
+ic3.CornerRadius = UDim.new(1, 0)
+ic3.Archivable = true
+ic3.Parent = ic2
+
+-- TextButton
+local ic4 = Instance.new("TextButton")
+ic4.Parent = ic2
+ic4.Active = true
+ic4.AnchorPoint = Vector2.new(0, 0)
+ic4.BackgroundTransparency = 1
+ic4.Size = UDim2.new(1, 0, 1, 0)
+ic4.Text = ""
+
+-- ImageLabel
+local ic5 = Instance.new("ImageLabel")
+ic5.Parent = ic2
+ic5.AnchorPoint = Vector2.new(0.5, 0.5)
+ic5.BackgroundTransparency = 1
+ic5.Position = UDim2.new(0.5, 0, 0.5, 0)
+ic5.Size = UDim2.new(0, 30, 0, 30)
+ic5.Image = "rbxassetid://71222902950411" -- Ensure this is a valid image ID
+
+-- Load Fluent UI Library
+local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+-- Check if Fluent is loaded correctly
+if not Library then
+    warn("Fluent library failed to load.")
+    return
+end
+
+-- Create Window
+local Window = Fluent:CreateWindow({
+    Title = "Knight Hub",
+    SubTitle = "By HungK",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 370),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+-- Create Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm" }), -- tab
+}
+
+-- Add Buttons
+Tabs.Main:AddButton({ Title = "1" })
+Tabs.Main:AddButton({ Title = "2" })
+Tabs.Main:AddButton({ Title = "3" })
+
+-- Add Toggle
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = true })
+
+-- Toggle Change Event
+Toggle:OnChanged(function()
+    print("Toggle changed:", Toggle.Value)
+end)
+
+-- Set default value of the toggle
+Toggle:SetValue(false)
+
+-- Minimize the window when the TextButton (ic4) is clicked
+ic4.MouseButton1Click:Connect(function()
+    -- Minimize the window
+    Window:Minimize()  -- This will minimize the window
+end)
