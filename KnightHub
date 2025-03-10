@@ -90,5 +90,5 @@ Toggle:SetValue(false)
 -- Minimize the window when the TextButton (ic4) is clicked
 ic4.MouseButton1Click:Connect(function()
     -- Minimize the window
-    Window:Minimize()
+    Window:Minimize()  -- This will minimize the window
 end)
