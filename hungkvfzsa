@@ -76,7 +76,7 @@ Tabs.Main:AddButton({ Title = "2" })
 Tabs.Main:AddButton({ Title = "3" })
 
 -- Add Toggle
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = true })
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = false })
 
 -- Toggle Change Event
 Toggle:OnChanged(function()
@@ -87,11 +87,30 @@ end)
 Toggle:SetValue(false)
 
 -- Minimize the window when the TextButton (ic4) is clicked
-ic4.MouseButton1Click:Connect(function()
-    -- Minimize the window
-    Window:Minimize()  -- This will minimize the window
+-- Các thuộc tính gốc
+local originalImageSize = UDim2.new(0, 30, 0, 30)
+local originalFrameBackgroundTransparency = 0.25 -- Kích thước ban đầu của ImageLabel
+-- Các thuộc tính mới (trạng thái thay đổi)
+local newImageSize = UDim2.new(0, 40, 0, 40)
+local newFrameBackgroundTransparency = 0
 
-    ic5.Size = UDim2.new(0,40,0,40)
-	
-	ic2.BackgroundTransparency = 0
+-- Biến để theo dõi trạng thái hiện tại (true = trạng thái gốc, false = trạng thái thay đổi)
+local isOriginalState = false
+
+-- Sự kiện MouseButton1Click cho TextButton
+ic4.MouseButton1Click:Connect(function()
+    Window:Minimize() and
+
+    if isOriginalState then
+        -- Thay đổi các thuộc tính sang trạng thái mới
+        ic5.Size = newImageSize
+        ic2.BackgroundTransparency = newFrameBackgroundTransparency
+    else
+        -- Khôi phục các thuộc tính về trạng thái gốc
+        ic5.Size = originalImageSize
+        ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+    end
+
+    -- Đảo ngược trạng thái để thay đổi vào lần nhấn sau
+    isOriginalState = not isOriginalState
 end)
