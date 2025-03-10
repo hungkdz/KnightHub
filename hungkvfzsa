@@ -99,7 +99,7 @@ local isOriginalState = false
 
 -- Sự kiện MouseButton1Click cho TextButton
 ic4.MouseButton1Click:Connect(function()
-    Window:Minimize() and
+    Window:Minimize()
 
     if isOriginalState then
         -- Thay đổi các thuộc tính sang trạng thái mới
