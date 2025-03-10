@@ -63,6 +63,7 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(480, 370),
     Acrylic = true,
     Theme = "Dark"
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
 -- Create Tabs
@@ -89,5 +90,5 @@ Toggle:SetValue(false)
 -- Minimize the window when the TextButton (ic4) is clicked
 ic4.MouseButton1Click:Connect(function()
     -- Minimize the window
-    Window:Minimize()  -- This will minimize the window
+    Window:Minimize()
 end)
