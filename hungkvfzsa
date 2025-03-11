@@ -1,6 +1,49 @@
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
+
+
+-- Load Fluent UI Library
+local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+
+-- Check if Fluent is loaded correctly
+if not Library then
+    warn("Fluent library failed to load.")
+    return
+end
+
+-- Create Window
+local Window = Fluent:CreateWindow({
+    Title = "Knight Hub",
+    SubTitle = "By HungK",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 370),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+-- Create Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm" }), -- tab
+}
+
+-- Add Buttons
+Tabs.Main:AddButton({ Title = "1" })
+Tabs.Main:AddButton({ Title = "2" })
+Tabs.Main:AddButton({ Title = "3" })
+
+-- Add Toggle
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = false })
+
+-- Toggle Change Event
+Toggle:OnChanged(function()
+    print("Toggle changed:", Toggle.Value)
+end)
+
+-- Set default value of the toggle
+Toggle:SetValue(false)
+
 local ic = Instance.new("ScreenGui")
 ic.Parent = game.CoreGui
 ic.Name = "knight"
@@ -46,47 +89,6 @@ ic5.Position = UDim2.new(0.5, 0, 0.5, 0)
 ic5.Size = UDim2.new(0, 40, 0, 40)
 ic5.Image = "rbxassetid://71222902950411" -- Ensure this is a valid image ID
 
--- Load Fluent UI Library
-local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-
--- Check if Fluent is loaded correctly
-if not Library then
-    warn("Fluent library failed to load.")
-    return
-end
-
--- Create Window
-local Window = Fluent:CreateWindow({
-    Title = "Knight Hub",
-    SubTitle = "By HungK",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(480, 370),
-    Acrylic = true,
-    Theme = "Dark"
-})
-
--- Create Tabs
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main Farm" }), -- tab
-}
-
--- Add Buttons
-Tabs.Main:AddButton({ Title = "1" })
-Tabs.Main:AddButton({ Title = "2" })
-Tabs.Main:AddButton({ Title = "3" })
-
--- Add Toggle
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = false })
-
--- Toggle Change Event
-Toggle:OnChanged(function()
-    print("Toggle changed:", Toggle.Value)
-end)
-
--- Set default value of the toggle
-Toggle:SetValue(false)
-
 -- Minimize the window when the TextButton (ic4) is clicked
 local originalImageSize = UDim2.new(0, 30, 0, 30)
 local originalFrameBackgroundTransparency = 0.25
@@ -95,34 +97,20 @@ local newFrameBackgroundTransparency = 0
 
 local isOriginalState = true
 
--- Create TweenInfo
-local tweenInfo = TweenInfo.new(
-    0.5, -- Time to complete the tween (0.5 seconds)
-    Enum.EasingStyle.Quad, -- Easing style for smooth transition
-    Enum.EasingDirection.Out -- Direction of the easing (ease out for smooth stop)
-)
-
--- Create Tweens for ImageLabel and Frame
-local function createTween(object, goal)
-    return TweenService:Create(object, tweenInfo, goal)
-end
-
 -- Sự kiện MouseButton1Click cho TextButton
 ic4.MouseButton1Click:Connect(function()
     Window:Minimize()
 
-    -- Create tweens for ImageLabel and Frame
-    local frameGoal = { BackgroundTransparency = isOriginalState and newFrameBackgroundTransparency or originalFrameBackgroundTransparency }
-    local imageGoal = { Size = isOriginalState and newImageSize or originalImageSize }
+    if isOriginalState then
+        -- Thay đổi các thuộc tính sang trạng thái mới
+        ic5.Size = newImageSize
+        ic2.BackgroundTransparency = newFrameBackgroundTransparency
+    else
+        -- Khôi phục các thuộc tính về trạng thái gốc
+        ic5.Size = originalImageSize
+        ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+    end
 
-    -- Apply the tweens
-    local frameTween = createTween(ic2, frameGoal)
-    local imageTween = createTween(ic5, imageGoal)
-
-    frameTween:Play()
-    imageTween:Play()
-
-    -- Flip the state for the next click
     isOriginalState = not isOriginalState
 end)
 
@@ -133,18 +121,16 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         -- Minimize the window
         Window:Minimize()
 
-        -- Create tweens for ImageLabel and Frame
-        local frameGoal = { BackgroundTransparency = isOriginalState and newFrameBackgroundTransparency or originalFrameBackgroundTransparency }
-        local imageGoal = { Size = isOriginalState and newImageSize or originalImageSize }
+        if isOriginalState then
+            -- Change the properties when minimized
+            ic5.Size = newImageSize
+            ic2.BackgroundTransparency = newFrameBackgroundTransparency
+        else
+            -- Reset the properties when not minimized
+            ic5.Size = originalImageSize
+            ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+        end
 
-        -- Apply the tweens
-        local frameTween = createTween(ic2, frameGoal)
-        local imageTween = createTween(ic5, imageGoal)
-
-        frameTween:Play()
-        imageTween:Play()
-
-        -- Flip the state for the next press
         isOriginalState = not isOriginalState
     end
 end)
