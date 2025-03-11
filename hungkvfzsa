@@ -1,6 +1,6 @@
-local localPlayer = game.Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
--- Create the ScreenGui
 local ic = Instance.new("ScreenGui")
 ic.Parent = game.CoreGui
 ic.Name = "knight"
@@ -48,6 +48,7 @@ ic5.Image = "rbxassetid://71222902950411" -- Ensure this is a valid image ID
 
 -- Load Fluent UI Library
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 
 -- Check if Fluent is loaded correctly
 if not Library then
@@ -87,14 +88,11 @@ end)
 Toggle:SetValue(false)
 
 -- Minimize the window when the TextButton (ic4) is clicked
--- Các thuộc tính gốc
 local originalImageSize = UDim2.new(0, 30, 0, 30)
-local originalFrameBackgroundTransparency = 0.25 -- Kích thước ban đầu của ImageLabel
--- Các thuộc tính mới (trạng thái thay đổi)
+local originalFrameBackgroundTransparency = 0.25
 local newImageSize = UDim2.new(0, 40, 0, 40)
 local newFrameBackgroundTransparency = 0
 
--- Biến để theo dõi trạng thái hiện tại (true = trạng thái gốc, false = trạng thái thay đổi)
 local isOriginalState = true
 
 -- Sự kiện MouseButton1Click cho TextButton
@@ -111,6 +109,26 @@ ic4.MouseButton1Click:Connect(function()
         ic2.BackgroundTransparency = originalFrameBackgroundTransparency
     end
 
-    -- Đảo ngược trạng thái để thay đổi vào lần nhấn sau
     isOriginalState = not isOriginalState
+end)
+
+-- Minimize the window when the Left Control key is pressed
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end  -- Ignore if the input is processed by the game
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftControl then
+        -- Minimize the window
+        Window:Minimize()
+
+        if isOriginalState then
+            -- Change the properties when minimized
+            ic5.Size = newImageSize
+            ic2.BackgroundTransparency = newFrameBackgroundTransparency
+        else
+            -- Reset the properties when not minimized
+            ic5.Size = originalImageSize
+            ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+        end
+
+        isOriginalState = not isOriginalState
+    end
 end)
