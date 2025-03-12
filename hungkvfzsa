@@ -44,6 +44,53 @@ end)
 -- Set default value of the toggle
 Toggle:SetValue(false)
 
+_G.FastAttack = false  -- Tắt chế độ tấn công nhanh
+
+local Player = game.Players.LocalPlayer
+local Net = game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
+local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+local Settings = { ClickDelay = 0 }
+local RangeAttack = { Distance = 28 }  -- Chỉnh tầm đánh xuống 50
+
+local UserInputService = game:GetService("UserInputService")  -- Sử dụng UserInputService để bắt sự kiện đầu vào
+
+local function IsAlive(character)
+    return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
+end
+
+local function ProcessEnemies(Folder)
+    local OthersEnemies = {}
+    for _, Enemy in Folder:GetChildren() do
+        local Head = Enemy:FindFirstChild("Head")
+        if Head and IsAlive(Enemy) and Player:DistanceFromCharacter(Head.Position) < RangeAttack.Distance then
+            table.insert(OthersEnemies, { Enemy, Head })
+        end
+    end
+    return OthersEnemies
+end
+
+local function AttackNearest()
+    local Enemies = ProcessEnemies(game.Workspace.Enemies)
+    local Characters = ProcessEnemies(game.Workspace.Characters)
+    if #Enemies > 0 then
+        RegisterAttack:FireServer(Settings.ClickDelay)
+        RegisterHit:FireServer(Enemies[1][2], Enemies)
+    elseif #Characters > 0 then
+        RegisterAttack:FireServer(Settings.ClickDelay)
+        RegisterHit:FireServer(Characters[1][2], Characters)
+    end
+end
+
+-- Lắng nghe sự kiện nhấp chuột trái
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end  -- Nếu sự kiện đã được xử lý bởi game (ví dụ: giao diện người dùng), thì bỏ qua
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then  -- Kiểm tra nhấp chuột trái
+        AttackNearest()  -- Gọi hàm tấn công
+    end
+end)
+
 local ic = Instance.new("ScreenGui")
 ic.Parent = game.CoreGui
 ic.Name = "knight"
