@@ -7,6 +7,8 @@ local executor_name = "Unknown"
 
 if getexecutorname then
     executor_name = getexecutorname()
+elseif iskrnlclosure then
+    executor_name = "Krnl"  -- Xác định Krnl nếu `iskrnlclosure` tồn tại
 end
 
 if allowed_executors[executor_name] then
