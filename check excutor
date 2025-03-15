@@ -1,11 +1,7 @@
-if syn then
-    print("Executor: Synapse X")
-elseif fluxus then
-    print("Executor: Fluxus")
-elseif iskrnlclosure then
-    print("Executor: Krnl")
-elseif secure_call then
-    print("Executor: Script-Ware")
+if codex then
+    print("Bạn đang sử dụng Codex!")
+elseif getexecutorname then
+    print("Executor: " .. getexecutorname())
 else
-    print("Không thể xác định executor hoặc đang chạy trên Roblox Studio")
+    print("Không thể xác định executor.")
 end
