@@ -1,0 +1,5 @@
+if iskrnlclosure then
+    print("Bạn đang sử dụng Krnl!")
+else
+    print("Không thể xác định executor.")
+end
