@@ -1,5 +1,11 @@
-if iskrnlclosure then
-    print("Bạn đang sử dụng Krnl!")
+if syn then
+    print("Executor: Synapse X")
+elseif fluxus then
+    print("Executor: Fluxus")
+elseif iskrnlclosure then
+    print("Executor: Krnl")
+elseif secure_call then
+    print("Executor: Script-Ware")
 else
-    print("Không thể xác định executor.")
+    print("Không thể xác định executor hoặc đang chạy trên Roblox Studio")
 end
