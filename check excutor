@@ -1,5 +1,4 @@
 local allowed_executors = {
-    ["Krnl"] = true,
     ["Codex"] = true,
     ["Arceus X Neo"] = true
 }
@@ -8,12 +7,10 @@ local executor_name = "Unknown"
 
 if getexecutorname then
     executor_name = getexecutorname()
-elseif iskrnlclosure then
-    executor_name = "Krnl"
 end
 
 if allowed_executors[executor_name] then
     print("Executor hợp lệ: " .. executor_name)
 else
-    game.Players.LocalPlayer:Kick("Executor của bạn không được hỗ trợ! Vui lòng sử dụng Krnl, Codex hoặc Arceus X Neo.")
+    game.Players.LocalPlayer:Kick("Executor của bạn không được hỗ trợ! Vui lòng sử dụng Codex hoặc Arceus X Neo.")
 end
