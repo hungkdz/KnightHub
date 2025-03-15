@@ -1,1 +1,16 @@
+local allowed_executors = {
+    ["Codex"] = true,
+    ["Arceus X Neo"] = true
+}
 
+local executor_name = "Unknown"
+
+if getexecutorname then
+    executor_name = getexecutorname()
+end
+
+if allowed_executors[executor_name] then
+    print("Executor hợp lệ: " .. executor_name)
+else
+    game.Players.LocalPlayer:Kick("Executor của bạn không được hỗ trợ! Vui lòng sử dụng Codex hoặc Arceus X Neo.")
+end
