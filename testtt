@@ -1,0 +1,93 @@
+local function QuestVisible()
+    local QuestActive = Player.PlayerGui.Main.Quest
+    if not QuestActive.Visible then
+        QuestActive.Container.QuestTitle.Title.Text = ""
+    end
+    return QuestActive.Visible
+end
+
+local function VerifyQuest(EnemieName)
+    local QuestActive = Player.PlayerGui.Main.Quest
+    local Text1 = QuestActive.Container.QuestTitle.Title.Text:gsub("-", ""):lower()
+    local Text2 = EnemieName:gsub("-", ""):lower()
+    return QuestActive.Visible and Text1:find(Text2)
+end
+
+local function Get_LevelQuest()
+    local lv = PlayerLevel.Value
+    if lv >= 1 and lv <= 9 then
+        CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
+        LevelQ = 1
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        Ms = "Bandit"
+    elseif lv >= 10 and lv <= 14 then
+        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
+        LevelQ = 1
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        Ms = "Monkey"
+    elseif lv >= 15 and lv <= 29 then
+        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
+        LevelQ = 2
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        Ms = "Gorilla"
+    elseif lv >= 30 and lv <= 39 then
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
+        LevelQ = 1
+        CFT = {CFrame.new(-1160.14258, 20, 3929.40723), CFrame.new(-1264.62415, 20, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        Ms = "Pirate"
+    elseif lv >= 40 and lv <= 59 then
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
+        LevelQ = 2
+        CFT = {CFrame.new(-1204.29492, 30, 4286.92773), CFrame.new(-962.269287, 30, 4312.79834), CFrame.new(-1333.89319, 15.1842623, 4227.29639)}
+        Ms = "Brute"
+    end
+end
+
+PlayerLevel.Changed:Connect(Get_LevelQuest)
+task.spawn(function()
+    while task.wait(1) do
+        pcall(Get_LevelQuest)
+    end
+end)
+Get_LevelQuest()
+
+local function BringNPC(Enemie, MultBring)
+    if not BringMobs or not BringMobsDistance then return end
+    
+    local EnemiePP = Enemie.PrimaryPart
+    if EnemiePP then
+        EnemiePP.CFrame = CFrame.new(EnemiePP.Position)
+        EnemiePP.CanCollide = false
+        EnemiePP.Size = Vector3.new(50, 50, 50)
+    end
+
+    local function Bring(_, NPC)
+        if MultBring or NPC.Name == Enemie.Name then
+            local EnemieH = NPC:FindFirstChild("Humanoid")
+            
+            if EnemieH and EnemieH.Health > 0 then
+                local EnePP1, EnePP2 = NPC.PrimaryPart, Enemie.PrimaryPart
+                
+                if EnePP1 and EnePP2 then
+                    local Mag = (EnePP1.Position - EnePP2.Position).Magnitude
+                    if Mag < BringMobsDistance and Mag >= 1 then
+                        EnePP1.CFrame = EnePP2.CFrame
+                        EnePP1.CanCollide = false
+                        EnePP1.Size = Vector3.new(50, 50, 50)
+                        EnemieH.WalkSpeed = 0
+                        EnemieH.JumpPower = 0
+                        EnemieH:ChangeState(14)
+                        
+                        if EnemieH:FindFirstChild("Animator") then
+                            EnemieH.Animator:Destroy()
+                        end
+                        if NPC:FindFirstChild("Head") and NPC.Head.CanCollide then
+                            NPC.Head.CanCollide = false
+                        end
+                        sethiddenproperty(Player, "SimulationRadius", math.huge)
+                    end
+                end
+            end
+        end
+    end
+end
