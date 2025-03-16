@@ -43,6 +43,14 @@ local function Get_LevelQuest()
     end
 end
 
+if Player:FindFirstChild("PlayerLevel") then
+    PlayerLevel = Player.PlayerLevel
+    PlayerLevel.Changed:Connect(Get_LevelQuest)
+else
+    warn("PlayerLevel không tồn tại!")
+end
+
+
 PlayerLevel.Changed:Connect(Get_LevelQuest)
 task.spawn(function()
     while task.wait(1) do
