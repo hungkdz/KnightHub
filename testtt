@@ -8,18 +8,12 @@ function clv()
     local player = game:GetService("Players").LocalPlayer
     local lv = player.Data.Level.Value
     if Sea1 then
-        if lv >= 1 and lv <= 9 then
+        if lv >= 1 and lv <= 100 then
             CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
             LevelQ = 1
             NameQuest = "BanditQuest1"
             CFT = {CFrame.new(943, 40, 1562)}
             Ms = "Bandit"
-        elseif lv >= 10 and lv <= 14 then
-            CFQ = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102)
-            LevelQ = 1
-            NameQuest = "JungleQuest"
-            CFT = {CFrame.new(-1448.1446533203, 50.851993560791, 63.60718536377)}
-            Ms = "Monkey"
         else
             CFQ = CFrame.new(0, 0, 0) -- Giá trị mặc định để tránh nil
             warn("⚠️ Không tìm thấy nhiệm vụ cho cấp độ: " .. lv)
