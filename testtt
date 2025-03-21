@@ -1,23 +1,18 @@
 local TweenService = game:GetService("TweenService")
 
 -- Thiết lập tốc độ di chuyển
-local speed = 100 -- Đơn vị: studs/giây (tăng giá trị để di chuyển nhanh hơn)
+local speed = 100 -- Đơn vị: studs/giây
 
 -- Hàm xác định nhiệm vụ dựa trên cấp độ
 function clv()
     local player = game:GetService("Players").LocalPlayer
     local lv = player.Data.Level.Value
     if Sea1 then
-        -- CFQ = CFrameQuest, CFT = CFrameTween, LevelQ = LevelQuest (số thứ tự nhiệm vụ trên NPC)
         if lv >= 1 and lv <= 9 then
             CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
             LevelQ = 1
             NameQuest = "BanditQuest1"
-            CFT = {
-                CFrame.new(943, 40, 1562),
-                CFrame.new(1115, 40, 1619),
-                CFrame.new(1265.79199, 40, 1592.849)
-            }
+            CFT = {CFrame.new(943, 40, 1562)}
             Ms = "Bandit"
         elseif lv >= 10 and lv <= 14 then
             CFQ = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102)
@@ -25,93 +20,72 @@ function clv()
             NameQuest = "JungleQuest"
             CFT = {CFrame.new(-1448.1446533203, 50.851993560791, 63.60718536377)}
             Ms = "Monkey"
-        elseif lv >= 15 and lv <= 29 then
-            CFQ = CFrame.new(-1601.6553955078, 36.85213470459, 153.38809204102)
-            LevelQ = 2 -- Level thứ 2 trên NPC JungleQuest
-            NameQuest = "JungleQuest"
-            CFT = {CFrame.new(-1142.6488037109, 40.462348937988, -515.39227294922)}
-            Ms = "Gorilla"
-        elseif lv >= 30 and lv <= 39 then
-            CFQ = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188)
-            LevelQ = 1
-            NameQuest = "BuggyQuest1"
-            CFT = {CFrame.new(-1201.0881347656, 40.628940582275, 3857.5966796875)}
-            Ms = "Pirate"
-        elseif lv >= 40 and lv <= 59 then
-            CFQ = CFrame.new(-1140.1761474609, 4.752049446106, 3827.4057617188)
-            LevelQ = 2
-            NameQuest = "BuggyQuest1"
-            CFT = {CFrame.new(-1387.5324707031, 24.592035293579, 4100.9575195313)}
-            Ms = "Brute"
-        elseif lv >= 60 and lv <= 74 then
-            CFQ = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625)
-            LevelQ = 1
-            NameQuest = "DesertQuest"
-            CFT = {CFrame.new(984.99896240234, 16.109552383423, 4417.91015625)}
-            Ms = "Desert Bandit"
-        elseif lv >= 75 and lv <= 89 then
-            CFQ = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625)
-            LevelQ = 2
-            NameQuest = "DesertQuest"
-            CFT = {CFrame.new(1547.1510009766, 14.452038764954, 4381.8002929688)}
-            Ms = "Desert Officer"
+        else
+            CFQ = CFrame.new(0, 0, 0) -- Giá trị mặc định để tránh nil
+            warn("⚠️ Không tìm thấy nhiệm vụ cho cấp độ: " .. lv)
         end
     end
 end
 
--- Hàm tính toán thời gian di chuyển dựa trên tốc độ
+-- Hàm tính toán thời gian di chuyển
 function GetTweenTime(startPos, endPos)
-    local distance = (startPos - endPos).Magnitude -- Tính khoảng cách giữa 2 điểm
-    return distance / speed -- Thời gian = quãng đường / tốc độ
+    return (startPos - endPos).Magnitude / speed
 end
 
--- Hàm nhận nhiệm vụ từ NPC
+-- Hàm nhận nhiệm vụ
 function StartQuest()
     local player = game:GetService("Players").LocalPlayer
     local replicatedStorage = game:GetService("ReplicatedStorage")
     local questFrame = player.PlayerGui.Main.Quest
 
-    -- Gọi hàm clv() để lấy dữ liệu nhiệm vụ hiện tại
-    clv()
+    clv() -- Gọi hàm để cập nhật CFQ
 
-    -- Kiểm tra nếu chưa nhận nhiệm vụ thì thực hiện nhận nhiệm vụ
-    if questFrame.Visible == false then
-        replicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-        wait(1) -- Đợi 1 giây để đảm bảo nhiệm vụ đã nhận
+    if not CFQ then
+        warn("⚠️ Lỗi: CFQ chưa được thiết lập!")
+        return
     end
 
-    -- Di chuyển đến vị trí NPC nhận nhiệm vụ bằng Tween (dựa trên tốc độ)
-    local humanoidRootPart = player.Character.HumanoidRootPart
-    local tweenTime = GetTweenTime(humanoidRootPart.Position, CFQ.Position) -- Tính thời gian di chuyển
+    if questFrame.Visible == false then
+        replicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+        wait(1)
+    end
 
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFQ})
-    tween:Play()
-    tween.Completed:Wait()
+    local humanoidRootPart = player.Character.HumanoidRootPart
+    local tweenTime = GetTweenTime(humanoidRootPart.Position, CFQ.Position)
+    
+    if tweenTime > 0 then
+        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFQ})
+        tween:Play()
+        tween.Completed:Wait()
+    end
 end
 
--- Hàm di chuyển đến quái vật bằng TweenService với tốc độ cố định
+-- Hàm di chuyển đến quái vật
 function GoToMonster()
     local player = game:GetService("Players").LocalPlayer
     local humanoidRootPart = player.Character.HumanoidRootPart
 
-    -- Gọi lại clv() để lấy tọa độ quái vật
     clv()
 
-    -- Kiểm tra nếu đã nhận nhiệm vụ rồi thì di chuyển đến quái vật
-    if player.PlayerGui.Main.Quest.Visible then
-        for _, targetCFrame in pairs(CFT) do
-            local tweenTime = GetTweenTime(humanoidRootPart.Position, targetCFrame.Position) -- Tính thời gian dựa trên tốc độ
-            
+    if not CFT or #CFT == 0 then
+        warn("⚠️ Không có tọa độ quái vật!")
+        return
+    end
+
+    for _, targetCFrame in pairs(CFT) do
+        local tweenTime = GetTweenTime(humanoidRootPart.Position, targetCFrame.Position)
+        
+        if tweenTime > 0 then
             local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
             local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
             tween:Play()
-            tween.Completed:Wait() -- Chờ cho đến khi hoàn thành Tween trước khi đi tiếp
+            tween.Completed:Wait()
         end
     end
 end
 
--- Gọi hàm để nhận nhiệm vụ và đi đánh quái
+-- Gọi hàm
 StartQuest()
-wait(2) -- Đợi một chút để đảm bảo nhiệm vụ đã nhận
+wait(2)
 GoToMonster()
