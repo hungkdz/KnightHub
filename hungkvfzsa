@@ -34,12 +34,20 @@ Tabs.Main:AddButton({ Title = "2" })
 Tabs.Main:AddButton({ Title = "3" })
 
 -- Add Toggle
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = false })
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 
--- Toggle Change Event
+_G.AutoQuest = false  -- Biến kiểm soát trạng thái toggle
+
 Toggle:OnChanged(function()
-    print("Toggle changed:", Toggle.Value)
+    _G.AutoQuest = Toggle.Value  -- Cập nhật trạng thái theo toggle
+    if _G.AutoQuest then
+        while _G.AutoQuest do
+            GetQuest()
+            task.wait(5)  -- Đợi 5 giây trước khi chạy lại để tránh spam server
+        end
+    end
 end)
+
 
 -- Set default value of the toggle
 Toggle:SetValue(false)
