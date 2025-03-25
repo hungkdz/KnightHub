@@ -1,6 +1,4 @@
 repeat task.wait()until game:IsLoaded()
-local Player = game.Players.LocalPlayer
-local character = Player.Character or Player.CharacterAdded:Wait()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
@@ -12,9 +10,14 @@ local CommF = Remotes:WaitForChild("CommF_", 9e9)
 local Enemies = workspace:WaitForChild("Enemies", 9e9)
 local Boats = workspace:WaitForChild("Boats", 9e9)
 
+local Player = Players.LocalPlayer
+local PlayerLevel = Player.Data.Level 
+local Quest = {CFrame.new(), CFrame.new(), "", "", 1}
+local QuestTween = {}
+local BringMobs = {}
+
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local humanoid = character:FindFirstChildOfClass("Humanoid")
 
 
 
@@ -49,45 +52,19 @@ Tabs.Main:AddButton({ Title = "2" })
 Tabs.Main:AddButton({ Title = "3" })
 
 -- Add Toggle
--- Biến điều khiển vòng lặp clv
--- Biến điều khiển vòng lặp clv
-local isFarming = false
-local farmingThread  -- Giữ luồng đang chạy để có thể dừng nó
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Toggle", Default = false })
 
 -- Toggle Change Event
 Toggle:OnChanged(function()
     print("Toggle changed:", Toggle.Value)
-
-    if Toggle.Value then
-        isFarming = true
-        farmingThread = task.spawn(function()
-            while isFarming do
-                clv()
-                task.wait(1)  -- Chạy lại sau 1 giây để tránh spam
-            end
-        end)
-    else
-        isFarming = false  -- Dừng vòng lặp clv
-    end
 end)
+
+-- Set default value of the toggle
+Toggle:SetValue(false)
 
 _G.FastAttack = false  -- Tắt chế độ tấn công nhanh
 
 local Player = game.Players.LocalPlayer
-
--- Đợi nhân vật xuất hiện
-local character = Player.Character or Player.CharacterAdded:Wait()
-local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart")
-local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
-
--- Kiểm tra xem nhân vật có tồn tại không
-if not character or not humanoidRootPart or not humanoid then
-    warn("⚠ Lỗi: Không tìm thấy nhân vật hoặc Humanoid!")
-    return
-end
-
-
-
 local character = player.Character or player.CharacterAdded:Wait()
 local Net = game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
 local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
@@ -159,28 +136,10 @@ game:GetService("Players").LocalPlayer.Idled:Connect(function()
     virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
 end)
 
-local speed = 175  
-local hasReceivedFirstQuest = false  -- 🔄 Kiểm soát việc nhận nhiệm vụ lần đầu
-
--- 🏃‍♂️ Hàm Tween nhân vật đến vị trí đích
-function TweenToPosition(targetPosition)
-    local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
-    tween:Play()
-    tween.Completed:Wait()
-
-    -- 🏁 Cập nhật vị trí chính xác sau khi Tween
-    humanoidRootPart.CFrame = CFrame.new(targetPosition)
-    humanoid:MoveTo(targetPosition)
-    task.wait(0.1)
-end
-
-
 function clv()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
-    local lv = player.Data.Level.Value  
+    local level = player.Data.Level.Value  
     local NameQuest, CFQ, LevelQ, CFT, Ms
 
     if Sea1 then
@@ -214,7 +173,7 @@ function clv()
         Ms = "Pirate"
 
         elseif lv == 40 and lv <= 59 then
-        NameQuest = "BuggyQuest1"
+        NameQuest = "Brute Quest"
         CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
         LevelQ = 2
         CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
@@ -909,33 +868,6 @@ function clv()
         end
 
 end
-
-local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-local hasQuest = questFrame and questFrame.Visible
-
--- 🏁 Nếu script mới kích hoạt, nhận lại nhiệm vụ một lần
-if not hasReceivedFirstQuest then
-    hasReceivedFirstQuest = true
-    TweenToPosition(CFQ.Position)
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
-    end)
-    return
-end
-
--- 🔄 Nếu đã có nhiệm vụ, không nhận lại cho đến khi hoàn thành
-if hasQuest then return end
-
--- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
-TweenToPosition(CFQ.Position)
-pcall(function()
-    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
-end)
-end
-
-end
-
-
 
 
 
