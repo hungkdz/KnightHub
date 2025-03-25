@@ -1,3 +1,6 @@
+repeat task.wait()until game:IsLoaded()
+local Player = game.Players.LocalPlayer
+local character = Player.Character or Player.CharacterAdded:Wait()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
@@ -8,10 +11,6 @@ local CommF = Remotes:WaitForChild("CommF_", 9e9)
 
 local Enemies = workspace:WaitForChild("Enemies", 9e9)
 local Boats = workspace:WaitForChild("Boats", 9e9)
-
-local Player = Players.LocalPlayer
-local QuestTween = {}
-local BringMobs = {}
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -51,7 +50,9 @@ Tabs.Main:AddButton({ Title = "3" })
 
 -- Add Toggle
 -- Biến điều khiển vòng lặp clv
+-- Biến điều khiển vòng lặp clv
 local isFarming = false
+local farmingThread  -- Giữ luồng đang chạy để có thể dừng nó
 
 -- Toggle Change Event
 Toggle:OnChanged(function()
@@ -59,10 +60,12 @@ Toggle:OnChanged(function()
 
     if Toggle.Value then
         isFarming = true
-        while isFarming do
-            clv()
-            task.wait(0.5)  -- Chạy lại sau 1 giây để tránh spam
-        end
+        farmingThread = task.spawn(function()
+            while isFarming do
+                clv()
+                task.wait(1)  -- Chạy lại sau 1 giây để tránh spam
+            end
+        end)
     else
         isFarming = false  -- Dừng vòng lặp clv
     end
@@ -163,7 +166,7 @@ end
 function clv()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
-    local level = player.Data.Level.Value  
+    local lv = player.Data.Level.Value  
     local NameQuest, CFQ, LevelQ, CFT, Ms
 
     if Sea1 then
