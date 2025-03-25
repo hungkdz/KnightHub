@@ -285,6 +285,3 @@ function GetQuest()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
 end
-
--- 🏁 Chạy hàm để nhận nhiệm vụ
-GetQuest()
