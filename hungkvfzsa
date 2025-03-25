@@ -1,3 +1,15 @@
+-- 🛠 Khai báo dịch vụ
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
 -- 🖥 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
@@ -21,55 +33,61 @@ local Tabs = {
 }
 
 -- 🎛️ Thêm Toggle Auto Quest
-local ToggleQuest = Tabs.Main:AddToggle("AutoQuest", { Title = "Auto Quest", Default = false })
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
-ToggleQuest:OnChanged(function()
-    _G.AutoQuest = ToggleQuest.Value  
+Toggle:OnChanged(function()
+    _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
-        while _G.AutoQuest do
-            GetQuest()
-            task.wait(5)  
-        end
+        task.spawn(function()
+            while _G.AutoQuest do
+                GetQuest()
+                task.wait(5)
+            end
+        end)
     end
 end)
 
--- 🎛️ Thêm Toggle Auto Fly
-local ToggleFly = Tabs.Main:AddToggle("AutoFly", { Title = "Auto Fly to NPC", Default = false })
-_G.AutoFly = false  
-
-ToggleFly:OnChanged(function()
-    _G.AutoFly = ToggleFly.Value  
-end)
-
 -- 🏃‍♂️ Fix rung camera khi di chuyển
-function FlyToPosition(targetPosition)
-    local character = game.Players.LocalPlayer.Character
-    if not character then return end
+function TweenToPosition(targetPosition)
+    if not humanoidRootPart then return end
 
+    local speed = 175  
+    local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
+
+    local targetCFrame = CFrame.new(
+        targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z,
+        humanoidRootPart.CFrame:ToEulerAnglesYXZ()
+    )
+
+    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+
+    tween:Play()
+    tween.Completed:Wait()
+    humanoidRootPart.CFrame = targetCFrame
+    humanoid:MoveTo(targetPosition)
+end
+
+-- 🚀 Hàm bay đến vị trí NPC nhận nhiệm vụ
+function FlyToPosition(targetPosition)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    -- Xóa các lực cũ trước khi thêm mới
     for _, obj in ipairs(hrp:GetChildren()) do
         if obj:IsA("BodyVelocity") or obj:IsA("AlignPosition") then
             obj:Destroy()
         end
     end
 
-    -- Tạo BodyVelocity để bay mà không rung
     local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = (targetPosition - hrp.Position).unit * 175 -- Điều chỉnh tốc độ bay
-    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge) -- Cho phép bay tự do
+    bodyVelocity.Velocity = (targetPosition - hrp.Position).unit * 100 
+    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bodyVelocity.Parent = hrp
 
-    -- Chờ nhân vật đến nơi
-    repeat
-        task.wait()
-    until (hrp.Position - targetPosition).Magnitude < 5
-
-    bodyVelocity:Destroy() -- Xóa lực sau khi đến nơi
-    hrp.CFrame = CFrame.new(targetPosition) -- Đảm bảo không lệch vị trí
+    repeat task.wait() until (hrp.Position - targetPosition).Magnitude < 5
+    bodyVelocity:Destroy()
+    hrp.CFrame = CFrame.new(targetPosition)
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -108,13 +126,9 @@ function GetQuest()
     local hasQuest = questFrame and questFrame.Visible
 
     if not hasQuest then
-        -- 🚀 Nếu chưa có nhiệm vụ, kiểm tra Auto Fly có bật không
-        if _G.AutoFly then
-            FlyToPosition(CFQ.Position)
-            task.wait(0.5)  -- Đợi một chút trước khi gửi yêu cầu nhận nhiệm vụ
-        end
-
-        -- 🏁 Nhận lại nhiệm vụ
+        FlyToPosition(CFQ.Position)
+        task.wait(0.5)
+        
         pcall(function()
             ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
         end)
