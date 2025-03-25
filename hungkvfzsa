@@ -53,9 +53,7 @@ function TweenToPosition(targetPosition)
     local speed = 175  
     local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
 
-    -- 🚀 Đặt vận tốc tuyến tính để giảm rung
-    humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-    humanoid.AutoRotate = false  -- Tắt xoay tự động để tránh rung
+    humanoidRootPart:SetNetworkOwner(nil)  -- Tắt quyền điều khiển tạm thời
 
     local targetCFrame = CFrame.new(
         targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z,
@@ -72,7 +70,7 @@ function TweenToPosition(targetPosition)
     humanoid:MoveTo(targetPosition)
 
     task.wait(0.1)
-    humanoid.AutoRotate = true  -- Bật lại xoay tự động sau khi đến vị trí
+    humanoidRootPart:SetNetworkOwner(Players.LocalPlayer)  -- Trả lại quyền điều khiển
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -106,8 +104,38 @@ function GetQuest()
         return
     end
 
+    function FlyToPosition(targetPosition)
+        local character = game.Players.LocalPlayer.Character
+        if not character then return end
+    
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+    
+        -- Xóa các lực cũ trước khi thêm mới
+        for _, obj in ipairs(hrp:GetChildren()) do
+            if obj:IsA("BodyVelocity") or obj:IsA("AlignPosition") then
+                obj:Destroy()
+            end
+        end
+    
+        -- Tạo BodyVelocity để bay mà không rung
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = (targetPosition - hrp.Position).unit * 100 -- Điều chỉnh tốc độ bay
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge) -- Cho phép bay tự do
+        bodyVelocity.Parent = hrp
+    
+        -- Chờ nhân vật đến nơi
+        repeat
+            task.wait()
+        until (hrp.Position - targetPosition).Magnitude < 5
+    
+        bodyVelocity:Destroy() -- Xóa lực sau khi đến nơi
+        hrp.CFrame = CFrame.new(targetPosition) -- Đảm bảo không lệch vị trí
+    end
+    
+
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
-    TweenToPosition(CFQ.Position)
+    FlyToPosition(CFQ.Position)
 
     -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
     pcall(function()
