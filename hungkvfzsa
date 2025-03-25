@@ -1,199 +1,5 @@
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-
-
-
--- Load Fluent UI Library
-local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-
--- Check if Fluent is loaded correctly
-if not Library then
-    warn("Fluent library failed to load.")
-    return
-end
-
--- Create Window
-local Window = Fluent:CreateWindow({
-    Title = "Knight Hub",
-    SubTitle = "By HungK",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(480, 370),
-    Acrylic = true,
-    Theme = "Dark"
-})
-
--- Create Tabs
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main Farm" }), -- tab
-}
-
--- Add Buttons
-Tabs.Main:AddButton({ Title = "1" })
-Tabs.Main:AddButton({ Title = "2" })
-Tabs.Main:AddButton({ Title = "3" })
-
--- Add Toggle
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
-
-_G.AutoQuest = false  -- Biến kiểm soát trạng thái toggle
-
-Toggle:OnChanged(function()
-    _G.AutoQuest = Toggle.Value  -- Cập nhật trạng thái theo toggle
-    if _G.AutoQuest then
-        task.spawn(function()  -- Chạy vòng lặp trong một luồng riêng
-            while _G.AutoQuest do
-                GetQuest()
-                task.wait(5)  -- Đợi 5 giây trước khi chạy lại để tránh spam server
-            end
-        end)
-    end
-end)
-
-
-
--- Set default value of the toggle
-Toggle:SetValue(false)
-
-_G.FastAttack = false  -- Tắt chế độ tấn công nhanh
-
-local Player = game.Players.LocalPlayer
-local Net = game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
-local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
-local RegisterHit = Net:WaitForChild("RE/RegisterHit")
-local Settings = { ClickDelay = 0 }
-local RangeAttack = { Distance = 28 }  -- Chỉnh tầm đánh xuống 50
-
-local UserInputService = game:GetService("UserInputService")  -- Sử dụng UserInputService để bắt sự kiện đầu vào
-
-local function IsAlive(character)
-    return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
-end
-
-local function ProcessEnemies(Folder)
-    local OthersEnemies = {}
-    for _, Enemy in Folder:GetChildren() do
-        local Head = Enemy:FindFirstChild("Head")
-        if Head and IsAlive(Enemy) and Player:DistanceFromCharacter(Head.Position) < RangeAttack.Distance then
-            table.insert(OthersEnemies, { Enemy, Head })
-        end
-    end
-    return OthersEnemies
-end
-
-local function AttackNearest()
-    local Enemies = ProcessEnemies(game.Workspace.Enemies)
-    local Characters = ProcessEnemies(game.Workspace.Characters)
-    if #Enemies > 0 then
-        RegisterAttack:FireServer(Settings.ClickDelay)
-        RegisterHit:FireServer(Enemies[1][2], Enemies)
-    elseif #Characters > 0 then
-        RegisterAttack:FireServer(Settings.ClickDelay)
-        RegisterHit:FireServer(Characters[1][2], Characters)
-    end
-end
-
--- Lắng nghe sự kiện nhấp chuột trái
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if gameProcessedEvent then return end  -- Nếu sự kiện đã được xử lý bởi game (ví dụ: giao diện người dùng), thì bỏ qua
-
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then  -- Kiểm tra nhấp chuột trái
-        AttackNearest()  -- Gọi hàm tấn công
-    end
-end)
-
-local ic = Instance.new("ScreenGui")
-ic.Parent = game.CoreGui
-ic.Name = "knight"
-ic.ClipToDeviceSafeArea = true
-ic.Enabled = true
-ic.ResetOnSpawn = true
-ic.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ic.Archivable = true
-ic.AutoLocalize = true
-
--- Create Frame
-local ic2 = Instance.new("Frame")
-ic2.Parent = ic
-ic2.Name = "dz"
-ic2.AnchorPoint = Vector2.new(0, 1)
-ic2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ic2.BackgroundTransparency = 0
-ic2.BorderSizePixel = 1
-ic2.Position = UDim2.new(0, 15, 0.2, 5)
-ic2.Size = UDim2.new(0, 50, 0, 50)
-
--- Round corners
-local ic3 = Instance.new("UICorner")
-ic3.CornerRadius = UDim.new(1, 0)
-ic3.Archivable = true
-ic3.Parent = ic2
-
--- TextButton
-local ic4 = Instance.new("TextButton")
-ic4.Parent = ic2
-ic4.Active = true
-ic4.AnchorPoint = Vector2.new(0, 0)
-ic4.BackgroundTransparency = 1
-ic4.Size = UDim2.new(1, 0, 1, 0)
-ic4.Text = ""
-
--- ImageLabel
-local ic5 = Instance.new("ImageLabel")
-ic5.Parent = ic2
-ic5.AnchorPoint = Vector2.new(0.5, 0.5)
-ic5.BackgroundTransparency = 1
-ic5.Position = UDim2.new(0.5, 0, 0.5, 0)
-ic5.Size = UDim2.new(0, 40, 0, 40)
-ic5.Image = "rbxassetid://71222902950411" -- Ensure this is a valid image ID
-
--- Minimize the window when the TextButton (ic4) is clicked
-local originalImageSize = UDim2.new(0, 30, 0, 30)
-local originalFrameBackgroundTransparency = 0.25
-local newImageSize = UDim2.new(0, 40, 0, 40)
-local newFrameBackgroundTransparency = 0
-
-local isOriginalState = true
-
--- Sự kiện MouseButton1Click cho TextButton
-ic4.MouseButton1Click:Connect(function()
-    Window:Minimize()
-
-    if isOriginalState then
-        -- Thay đổi các thuộc tính sang trạng thái mới
-        ic5.Size = newImageSize
-        ic2.BackgroundTransparency = newFrameBackgroundTransparency
-    else
-        -- Khôi phục các thuộc tính về trạng thái gốc
-        ic5.Size = originalImageSize
-        ic2.BackgroundTransparency = originalFrameBackgroundTransparency
-    end
-
-    isOriginalState = not isOriginalState
-end)
-
--- Minimize the window when the Left Control key is pressed
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end  -- Ignore if the input is processed by the game
-    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftControl then
-        -- Minimize the window
-        Window:Minimize()
-
-        if isOriginalState then
-            -- Change the properties when minimized
-            ic5.Size = newImageSize
-            ic2.BackgroundTransparency = newFrameBackgroundTransparency
-        else
-            -- Reset the properties when not minimized
-            ic5.Size = originalImageSize
-            ic2.BackgroundTransparency = originalFrameBackgroundTransparency
-        end
-
-        isOriginalState = not isOriginalState
-    end
-end)
-
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -203,33 +9,64 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:FindFirstChildOfClass("Humanoid")
 
--- 🚀 Tốc độ di chuyển (175 studs/giây)
-local speed = 175  
-local hasReceivedFirstQuest = false  -- 🔄 Kiểm soát việc nhận nhiệm vụ lần đầu
+-- Load Fluent UI Library
+local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 
--- 🏃‍♂️ Hàm Tween nhân vật đến vị trí đích
-local function WaitForCharacter()
-    local character = player.Character or player.CharacterAdded:Wait()  -- Đợi nhân vật xuất hiện lại
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart") -- Đợi HumanoidRootPart xuất hiện
-    return character, humanoidRootPart
+if not Library then
+    warn("Fluent library failed to load.")
+    return
 end
 
-function TweenToPosition(targetPosition)
-    -- Đợi nhân vật xuất hiện lại sau khi chết
-    local character, humanoidRootPart = WaitForCharacter()
+local Window = Library:CreateWindow({
+    Title = "Knight Hub",
+    SubTitle = "By HungK",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 370),
+    Acrylic = true,
+    Theme = "Dark"
+})
 
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm" }),
+}
+
+-- Tạo Toggle cho Auto Quest
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
+_G.AutoQuest = false  
+
+Toggle:OnChanged(function()
+    _G.AutoQuest = Toggle.Value  
+    if _G.AutoQuest then
+        while _G.AutoQuest do
+            GetQuest()
+            task.wait(5)  
+        end
+    end
+end)
+
+Toggle:SetValue(false)
+
+-- 🚀 Tốc độ di chuyển (175 studs/giây)
+local speed = 175  
+local hasReceivedFirstQuest = false  
+
+-- 🏃‍♂️ Hàm Tween nhân vật đến vị trí đích (Giữ nguyên hướng camera)
+function TweenToPosition(targetPosition)
     local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+    
+    -- Dữ liệu tween CFrame chỉ thay đổi vị trí, giữ nguyên góc quay của camera
+    local targetCFrame = CFrame.new(targetPosition, humanoidRootPart.Position + humanoidRootPart.CFrame.LookVector)
+
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
     tween:Play()
     tween.Completed:Wait()
 
-    -- Cập nhật vị trí chính xác sau khi Tween
-    humanoidRootPart.CFrame = CFrame.new(targetPosition)
+    humanoidRootPart.CFrame = targetCFrame
     humanoid:MoveTo(targetPosition)
     task.wait(0.1)
 end
-
 
 -- 🏆 Hàm nhận nhiệm vụ dựa trên cấp độ
 function GetQuest()
@@ -262,11 +99,9 @@ function GetQuest()
         return
     end
 
-    -- 🛑 Kiểm tra nếu đã có nhiệm vụ
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
     local hasQuest = questFrame and questFrame.Visible
 
-    -- 🏁 Nếu script mới kích hoạt, nhận lại nhiệm vụ một lần
     if not hasReceivedFirstQuest then
         hasReceivedFirstQuest = true
         TweenToPosition(CFQ.Position)
@@ -276,10 +111,8 @@ function GetQuest()
         return
     end
 
-    -- 🔄 Nếu đã có nhiệm vụ, không nhận lại cho đến khi hoàn thành
     if hasQuest then return end
 
-    -- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
     TweenToPosition(CFQ.Position)
     pcall(function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
