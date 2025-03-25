@@ -1,3 +1,4 @@
+-- 🛠 Khai báo dịch vụ
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,12 +10,12 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:FindFirstChildOfClass("Humanoid")
 
--- Load Fluent UI Library
+-- 🖥 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 
 if not Library then
-    warn("Fluent library failed to load.")
+    warn("Fluent UI không tải được!")
     return
 end
 
@@ -28,10 +29,10 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main Farm" }),
+    Main = Window:AddTab({ Title = "Main Farm" })
 }
 
--- Tạo Toggle cho Auto Quest
+-- 🎛️ Thêm Toggle Auto Quest
 local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
@@ -39,36 +40,41 @@ Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
         while _G.AutoQuest do
-            ForceGetQuest()  -- Luôn nhận lại nhiệm vụ
+            GetQuest()
             task.wait(5)  
         end
     end
 end)
 
-Toggle:SetValue(false)
-
--- 🚀 Tốc độ di chuyển (175 studs/giây)
-local speed = 175  
-
--- 🏃‍♂️ Hàm Tween nhân vật đến vị trí đích (Giữ nguyên hướng camera)
+-- 🏃‍♂️ Fix rung camera khi di chuyển
 function TweenToPosition(targetPosition)
-    local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    
-    -- Dữ liệu tween CFrame chỉ thay đổi vị trí, giữ nguyên góc quay của camera
-    local targetCFrame = CFrame.new(targetPosition, humanoidRootPart.Position + humanoidRootPart.CFrame.LookVector)
+    if not humanoidRootPart then return end
 
+    local speed = 175  
+    local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
+
+    humanoidRootPart:SetNetworkOwner(nil)  -- Tắt quyền điều khiển tạm thời
+
+    local targetCFrame = CFrame.new(
+        targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z,
+        humanoidRootPart.CFrame:ToEulerAnglesYXZ()
+    )
+
+    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+
     tween:Play()
     tween.Completed:Wait()
 
     humanoidRootPart.CFrame = targetCFrame
     humanoid:MoveTo(targetPosition)
+
     task.wait(0.1)
+    humanoidRootPart:SetNetworkOwner(Players.LocalPlayer)  -- Trả lại quyền điều khiển
 end
 
--- 🏆 Hàm lấy thông tin nhiệm vụ dựa trên cấp độ
-function GetQuestInfo()
+-- 🏆 Nhận nhiệm vụ
+function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
     local level = player.Data.Level.Value  
@@ -98,45 +104,21 @@ function GetQuestInfo()
         return
     end
 
-    return NameQuest, LevelQ, CFQ
-end
-
--- 🏆 Hàm nhận lại nhiệm vụ DÙ ĐÃ NHẬN hay chưa
-function ForceGetQuest()
-    local NameQuest, LevelQ, CFQ = GetQuestInfo()
-    if not NameQuest then return end
-
-    -- 🚀 Luôn nhận lại nhiệm vụ mới
+    -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
     TweenToPosition(CFQ.Position)
+
+    -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
     pcall(function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
 
-    -- ⏳ Chờ một chút trước khi kiểm tra nhiệm vụ
-    task.wait(1)
-
-    -- 🔄 Bắt đầu kiểm tra nhiệm vụ hiện tại để quyết định nhận nhiệm vụ mới
-    CheckQuest()
-end
-
--- 🔍 Kiểm tra xem đã hoàn thành nhiệm vụ hay chưa
-function CheckQuest()
+    -- 🛑 Kiểm tra nếu đã có nhiệm vụ
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
     local hasQuest = questFrame and questFrame.Visible
+    if hasQuest then return end
 
-    if hasQuest then
-        -- 🔄 Nếu đã có nhiệm vụ, chờ hoàn thành rồi nhận tiếp
-        while _G.AutoQuest and hasQuest do
-            task.wait(2)  -- Đợi 2 giây rồi kiểm tra lại
-            hasQuest = questFrame and questFrame.Visible
-        end
-
-        -- ✅ Sau khi nhiệm vụ cũ hoàn thành, nhận nhiệm vụ mới
-        if _G.AutoQuest then
-            ForceGetQuest()
-        end
-    else
-        -- 🛑 Nếu không có nhiệm vụ, nhận ngay nhiệm vụ mới
-        ForceGetQuest()
-    end
+    -- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
 end
