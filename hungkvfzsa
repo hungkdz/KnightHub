@@ -41,12 +41,15 @@ _G.AutoQuest = false  -- Biến kiểm soát trạng thái toggle
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  -- Cập nhật trạng thái theo toggle
     if _G.AutoQuest then
-        while _G.AutoQuest do
-            GetQuest()
-            task.wait(5)  -- Đợi 5 giây trước khi chạy lại để tránh spam server
-        end
+        task.spawn(function()  -- Chạy vòng lặp trong một luồng riêng
+            while _G.AutoQuest do
+                GetQuest()
+                task.wait(5)  -- Đợi 5 giây trước khi chạy lại để tránh spam server
+            end
+        end)
     end
 end)
+
 
 
 -- Set default value of the toggle
@@ -272,3 +275,6 @@ function GetQuest()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
 end
+
+-- 🏁 Chạy hàm để nhận nhiệm vụ
+GetQuest()
