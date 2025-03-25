@@ -1,85 +1,1015 @@
+repeat task.wait()until game:IsLoaded()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local Remotes = ReplicatedStorage:WaitForChild("Remotes", 9e9)
+local CommF = Remotes:WaitForChild("CommF_", 9e9)
+
+local Enemies = workspace:WaitForChild("Enemies", 9e9)
+local Boats = workspace:WaitForChild("Boats", 9e9)
+
+local Player = Players.LocalPlayer
+local QuestTween = {}
+local BringMobs = {}
+
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
 
--- Thiết lập tốc độ di chuyển
-local speed = 100 -- Đơn vị: studs/giây
 
--- Hàm xác định nhiệm vụ dựa trên cấp độ
+
+-- Load Fluent UI Library
+local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+
+-- Check if Fluent is loaded correctly
+if not Library then
+    warn("Fluent library failed to load.")
+    return
+end
+
+-- Create Window
+local Window = Fluent:CreateWindow({
+    Title = "Knight Hub",
+    SubTitle = "By HungK",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 370),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+-- Create Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm" }), -- tab
+}
+
+-- Add Buttons
+Tabs.Main:AddButton({ Title = "1" })
+Tabs.Main:AddButton({ Title = "2" })
+Tabs.Main:AddButton({ Title = "3" })
+
+-- Add Toggle
+-- Biến điều khiển vòng lặp clv
+local isFarming = false
+
+-- Toggle Change Event
+Toggle:OnChanged(function()
+    print("Toggle changed:", Toggle.Value)
+
+    if Toggle.Value then
+        isFarming = true
+        while isFarming do
+            clv()
+            task.wait(0.5)  -- Chạy lại sau 1 giây để tránh spam
+        end
+    else
+        isFarming = false  -- Dừng vòng lặp clv
+    end
+end)
+
+_G.FastAttack = false  -- Tắt chế độ tấn công nhanh
+
+local Player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local Net = game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
+local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+local Settings = { ClickDelay = 0 }
+local RangeAttack = { Distance = 28 }  -- Chỉnh tầm đánh xuống 50
+
+local UserInputService = game:GetService("UserInputService")  -- Sử dụng UserInputService để bắt sự kiện đầu vào
+
+local function IsAlive(character)
+    return character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0
+end
+
+local function ProcessEnemies(Folder)
+    local OthersEnemies = {}
+    for _, Enemy in Folder:GetChildren() do
+        local Head = Enemy:FindFirstChild("Head")
+        if Head and IsAlive(Enemy) and Player:DistanceFromCharacter(Head.Position) < RangeAttack.Distance then
+            table.insert(OthersEnemies, { Enemy, Head })
+        end
+    end
+    return OthersEnemies
+end
+
+local function AttackNearest()
+    local Enemies = ProcessEnemies(game.Workspace.Enemies)
+    local Characters = ProcessEnemies(game.Workspace.Characters)
+    if #Enemies > 0 then
+        RegisterAttack:FireServer(Settings.ClickDelay)
+        RegisterHit:FireServer(Enemies[1][2], Enemies)
+    elseif #Characters > 0 then
+        RegisterAttack:FireServer(Settings.ClickDelay)
+        RegisterHit:FireServer(Characters[1][2], Characters)
+    end
+end
+
+-- Lắng nghe sự kiện nhấp chuột trái
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end  -- Nếu sự kiện đã được xử lý bởi game (ví dụ: giao diện người dùng), thì bỏ qua
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then  -- Kiểm tra nhấp chuột trái
+        AttackNearest()  -- Gọi hàm tấn công
+    end
+end)
+
+-- Khởi tạo các biến Sea1, Sea2, Sea3
+local Sea1, Sea2, Sea3 = false, false, false
+
+-- Kiểm tra PlaceId và gán giá trị cho các biến tương ứng
+local placeId = game.PlaceId
+if placeId == 2753915549 then
+    Sea1 = true
+    print("Sea 1")
+elseif placeId == 4442272183 then
+    Sea2 = true
+    print("Sea 2")
+elseif placeId == 7449423635 then
+    Sea3 = true
+    print("Sea 3")
+else
+    game:Shutdown()  -- Tắt game nếu PlaceId không khớp với bất kỳ trường hợp nào
+end
+
+-- Đảm bảo người chơi không bị idle
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    local virtualUser = game:GetService("VirtualUser")
+    virtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    wait()
+    virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)
+
+local speed = 175  
+local hasReceivedFirstQuest = false  -- 🔄 Kiểm soát việc nhận nhiệm vụ lần đầu
+
+-- 🏃‍♂️ Hàm Tween nhân vật đến vị trí đích
+function TweenToPosition(targetPosition)
+    local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
+    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+    tween:Play()
+    tween.Completed:Wait()
+
+    -- 🏁 Cập nhật vị trí chính xác sau khi Tween
+    humanoidRootPart.CFrame = CFrame.new(targetPosition)
+    humanoid:MoveTo(targetPosition)
+    task.wait(0.1)
+end
+
+
 function clv()
-    local player = game:GetService("Players").LocalPlayer
-    local lv = player.Data.Level.Value
+    if not player.Data or not player.Data:FindFirstChild("Level") then return end
+
+    local level = player.Data.Level.Value  
+    local NameQuest, CFQ, LevelQ, CFT, Ms
+
     if Sea1 then
-        if lv >= 1 and lv <= 100 then
-            CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
-            LevelQ = 1
-            NameQuest = "BanditQuest1"
-            CFT = {CFrame.new(943, 40, 1562)}
-            Ms = "Bandit"
-        else
-            CFQ = CFrame.new(0, 0, 0) -- Giá trị mặc định để tránh nil
-            warn("⚠️ Không tìm thấy nhiệm vụ cho cấp độ: " .. lv)
-        end
-    end
-end
+        --CFQ = CframeQuest, CFT = CframeTween, LevelQ = LevelQuest, Ms = Monster
+        if lv == 1 and lv <= 9 then
+        NameQuest = "BanditQuest1"
+        CFQ = {1058.99231, 16.1369934, 1551.73328, 0.956294656, -0, -0.292404652, 0, 1, -0, 0.292404652, 0, 0.956294656}
+        LevelQ = 1
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        Ms = "Bandit"
 
--- Hàm tính toán thời gian di chuyển
-function GetTweenTime(startPos, endPos)
-    return (startPos - endPos).Magnitude / speed
-end
-
--- Hàm nhận nhiệm vụ
-function StartQuest()
-    local player = game:GetService("Players").LocalPlayer
-    local replicatedStorage = game:GetService("ReplicatedStorage")
-    local questFrame = player.PlayerGui.Main.Quest
-
-    clv() -- Gọi hàm để cập nhật CFQ
-
-    if not CFQ then
-        warn("⚠️ Lỗi: CFQ chưa được thiết lập!")
-        return
-    end
-
-    if questFrame.Visible == false then
-        replicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-        wait(1)
-    end
-
-    local humanoidRootPart = player.Character.HumanoidRootPart
-    local tweenTime = GetTweenTime(humanoidRootPart.Position, CFQ.Position)
-    
-    if tweenTime > 0 then
-        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFQ})
-        tween:Play()
-        tween.Completed:Wait()
-    end
-end
-
--- Hàm di chuyển đến quái vật
-function GoToMonster()
-    local player = game:GetService("Players").LocalPlayer
-    local humanoidRootPart = player.Character.HumanoidRootPart
-
-    clv()
-
-    if not CFT or #CFT == 0 then
-        warn("⚠️ Không có tọa độ quái vật!")
-        return
-    end
-
-    for _, targetCFrame in pairs(CFT) do
-        local tweenTime = GetTweenTime(humanoidRootPart.Position, targetCFrame.Position)
+        elseif lv == 10 and lv <= 14 then
+        NameQuest = "JungleQuest"
+        CFQ = {-1598.08899, 35.5500031, 153.378006, 0.556530476, 0, 0.830827177, 0, 1, 0, -0.830827177, 0, 0.556530476}
+        LevelQ = 1
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        Ms = "Monkey"
         
-        if tweenTime > 0 then
-            local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-            local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-            tween:Play()
-            tween.Completed:Wait()
+        elseif lv == 15 and lv <= 29  then
+        NameQuest = "JungleQuest"
+        CFQ = {-1598.08899, 35.5500031, 153.378006, 0.556530476, 0, 0.830827177, 0, 1, 0, -0.830827177, 0, 0.556530476}
+        LevelQ = 2
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        Ms = "Gorilla"
+
+        elseif lv == 30 and lv <= 39 then
+        NameQuest = "BuggyQuest1"
+        CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
+        LevelQ = 1
+        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        Ms = "Pirate"
+
+        elseif lv == 40 and lv <= 59 then
+        NameQuest = "BuggyQuest1"
+        CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
+        LevelQ = 2
+        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        Ms = "Brute"
+
+        elseif lv == 60 and lv <= 74 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 75 and lv <= 89 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 90 and lv <= 99 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 100 and lv <= 119 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 120 and lv <= 149 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 150 and lv <= 174 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 175 and lv <= 189 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 190 and lv <= 209 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 210 and lv <= 249 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 250 and lv <= 274 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 275 and lv <= 299 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 300 and lv <= 324 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 325 and lv <= 374 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 375 and lv <= 399 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 400 and lv <= 449 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 450 and lv <= 474 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 475 and lv <= 524 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 525 and lv <= 549 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 550 and lv <= 599 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 600 and lv <= 624 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 625 and lv <= 649 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 650 and lv <= 699 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 700 and lv <= 724 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 725 and lv <= 749 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 750 and lv <= 774 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 775 and lv <= 799 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 800 and lv <= 824 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 825 and lv <= 849 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 850 and lv <= 874 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 875 and lv <= 899 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 900 and lv <= 924 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 925 and lv <= 949 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 950 and lv <= 974 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 975 and lv <= 999 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1000 and lv <= 1024 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1025 and lv <= 1049 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1050 and lv <= 1074 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1075 and lv <= 1099 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1100 and lv <= 1124 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1125 and lv <= 1149 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1150 and lv <= 1174 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1175 and lv <= 1199 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1200 and lv <= 1224 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1225 and lv <= 1249 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1250 and lv <= 1274 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1275 and lv <= 1299 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1300 and lv <= 1324 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1325 and lv <= 1349 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1350 and lv <= 1374 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1375 and lv <= 1399 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1400 and lv <= 1424 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1425 and lv <= 1449 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1450 and lv <= 1474 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1475 and lv <= 1499 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1500 and lv <= 1524 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1525 and lv <= 1549 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1550 and lv <= 1574 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1575 and lv <= 1599 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1600 and lv <= 1624 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1625 and lv <= 1649 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1650 and lv <= 1674 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1675 and lv <= 1699 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1700 and lv <= 1724 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1725 and lv <= 1749 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1750 and lv <= 1774 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1775 and lv <= 1799 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1800 and lv <= 1824 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1825 and lv <= 1849 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1850 and lv <= 1874 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1875 and lv <= 1899 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1900 and lv <= 1924 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1925 and lv <= 1949 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1950 and lv <= 1974 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 1975 and lv <= 1999 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2000 and lv <= 2024 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2025 and lv <= 2049 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2050 and lv <= 2074 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2075 and lv <= 2099 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2100 and lv <= 2124 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2125 and lv <= 2149 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2150 and lv <= 2174 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2175 and lv <= 2199 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2200 and lv <= 2224 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2225 and lv <= 2249 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2250 and lv <= 2274 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2275 and lv <= 2299 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2300 and lv <= 2324 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2325 and lv <= 2349 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2350 and lv <= 2374 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2375 and lv <= 2399 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2400 and lv <= 2424 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2425 and lv <= 2449 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2450 and lv <= 2474 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2475 and lv <= 2499 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2500 and lv <= 2524 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2525 and lv <= 2549 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2550 and lv <= 2574 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
+        elseif lv == 2575 and lv <= 2599 then
+        NameQuest =
+        CFQ =
+        LevelQ =
+        CFT =
+        Ms =
+
         end
-    end
+
 end
 
--- Gọi hàm
-StartQuest()
-wait(2)
-GoToMonster()
+local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+local hasQuest = questFrame and questFrame.Visible
+
+-- 🏁 Nếu script mới kích hoạt, nhận lại nhiệm vụ một lần
+if not hasReceivedFirstQuest then
+    hasReceivedFirstQuest = true
+    TweenToPosition(CFQ.Position)
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
+    end)
+    return
+end
+
+-- 🔄 Nếu đã có nhiệm vụ, không nhận lại cho đến khi hoàn thành
+if hasQuest then return end
+
+-- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
+TweenToPosition(CFQ.Position)
+pcall(function()
+    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
+end)
+end
+
+end
+
+
+
+
+
+local ic = Instance.new("ScreenGui")
+ic.Parent = game.CoreGui
+ic.Name = "knight"
+ic.ClipToDeviceSafeArea = true
+ic.Enabled = true
+ic.ResetOnSpawn = true
+ic.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ic.Archivable = true
+ic.AutoLocalize = true
+
+-- Create Frame
+local ic2 = Instance.new("Frame")
+ic2.Parent = ic
+ic2.Name = "dz"
+ic2.AnchorPoint = Vector2.new(0, 1)
+ic2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ic2.BackgroundTransparency = 0
+ic2.BorderSizePixel = 1
+ic2.Position = UDim2.new(0, 15, 0.2, 5)
+ic2.Size = UDim2.new(0, 50, 0, 50)
+
+-- Round corners
+local ic3 = Instance.new("UICorner")
+ic3.CornerRadius = UDim.new(1, 0)
+ic3.Archivable = true
+ic3.Parent = ic2
+
+-- TextButton
+local ic4 = Instance.new("TextButton")
+ic4.Parent = ic2
+ic4.Active = true
+ic4.AnchorPoint = Vector2.new(0, 0)
+ic4.BackgroundTransparency = 1
+ic4.Size = UDim2.new(1, 0, 1, 0)
+ic4.Text = ""
+
+-- ImageLabel
+local ic5 = Instance.new("ImageLabel")
+ic5.Parent = ic2
+ic5.AnchorPoint = Vector2.new(0.5, 0.5)
+ic5.BackgroundTransparency = 1
+ic5.Position = UDim2.new(0.5, 0, 0.5, 0)
+ic5.Size = UDim2.new(0, 40, 0, 40)
+ic5.Image = "rbxassetid://71222902950411" -- Ensure this is a valid image ID
+
+-- Minimize the window when the TextButton (ic4) is clicked
+local originalImageSize = UDim2.new(0, 30, 0, 30)
+local originalFrameBackgroundTransparency = 0.25
+local newImageSize = UDim2.new(0, 40, 0, 40)
+local newFrameBackgroundTransparency = 0
+
+local isOriginalState = true
+
+-- Sự kiện MouseButton1Click cho TextButton
+ic4.MouseButton1Click:Connect(function()
+    Window:Minimize()
+
+    if isOriginalState then
+        -- Thay đổi các thuộc tính sang trạng thái mới
+        ic5.Size = newImageSize
+        ic2.BackgroundTransparency = newFrameBackgroundTransparency
+    else
+        -- Khôi phục các thuộc tính về trạng thái gốc
+        ic5.Size = originalImageSize
+        ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+    end
+
+    isOriginalState = not isOriginalState
+end)
+
+-- Minimize the window when the Left Control key is pressed
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end  -- Ignore if the input is processed by the game
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftControl then
+        -- Minimize the window
+        Window:Minimize()
+
+        if isOriginalState then
+            -- Change the properties when minimized
+            ic5.Size = newImageSize
+            ic2.BackgroundTransparency = newFrameBackgroundTransparency
+        else
+            -- Reset the properties when not minimized
+            ic5.Size = originalImageSize
+            ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+        end
+
+        isOriginalState = not isOriginalState
+    end
+end)
