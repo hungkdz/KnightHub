@@ -132,10 +132,6 @@ function GetQuest()
         bodyVelocity:Destroy() -- Xóa lực sau khi đến nơi
         hrp.CFrame = CFrame.new(targetPosition) -- Đảm bảo không lệch vị trí
     end
-    
-
-    -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
-    FlyToPosition(CFQ.Position)
 
     -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
     pcall(function()
@@ -143,12 +139,17 @@ function GetQuest()
     end)
 
     -- 🛑 Kiểm tra nếu đã có nhiệm vụ
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    local hasQuest = questFrame and questFrame.Visible
-    if hasQuest then return end
-
-    -- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-end
+        -- 🛑 Kiểm tra nếu đã có nhiệm vụ
+        local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+        local hasQuest = questFrame and questFrame.Visible
+    
+        if not hasQuest then
+            -- 🚀 Nếu chưa có nhiệm vụ, bay đến NPC để nhận nhiệm vụ
+            FlyToPosition(CFQ.Position)
+            task.wait(0.5)  -- Đợi một chút trước khi gửi yêu cầu nhận nhiệm vụ
+    
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+            end)
+        end
+    end
