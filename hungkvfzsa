@@ -53,7 +53,9 @@ function TweenToPosition(targetPosition)
     local speed = 175  
     local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
 
-    humanoidRootPart:SetNetworkOwner(nil)  -- Tắt quyền điều khiển tạm thời
+    -- 🚀 Đặt vận tốc tuyến tính để giảm rung
+    humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    humanoid.AutoRotate = false  -- Tắt xoay tự động để tránh rung
 
     local targetCFrame = CFrame.new(
         targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z,
@@ -70,7 +72,7 @@ function TweenToPosition(targetPosition)
     humanoid:MoveTo(targetPosition)
 
     task.wait(0.1)
-    humanoidRootPart:SetNetworkOwner(Players.LocalPlayer)  -- Trả lại quyền điều khiển
+    humanoid.AutoRotate = true  -- Bật lại xoay tự động sau khi đến vị trí
 end
 
 -- 🏆 Nhận nhiệm vụ
