@@ -208,18 +208,28 @@ local speed = 175
 local hasReceivedFirstQuest = false  -- 🔄 Kiểm soát việc nhận nhiệm vụ lần đầu
 
 -- 🏃‍♂️ Hàm Tween nhân vật đến vị trí đích
+local function WaitForCharacter()
+    local character = player.Character or player.CharacterAdded:Wait()  -- Đợi nhân vật xuất hiện lại
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart") -- Đợi HumanoidRootPart xuất hiện
+    return character, humanoidRootPart
+end
+
 function TweenToPosition(targetPosition)
+    -- Đợi nhân vật xuất hiện lại sau khi chết
+    local character, humanoidRootPart = WaitForCharacter()
+
     local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
     tween:Play()
     tween.Completed:Wait()
 
-    -- 🏁 Cập nhật vị trí chính xác sau khi Tween
+    -- Cập nhật vị trí chính xác sau khi Tween
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
     humanoid:MoveTo(targetPosition)
     task.wait(0.1)
 end
+
 
 -- 🏆 Hàm nhận nhiệm vụ dựa trên cấp độ
 function GetQuest()
