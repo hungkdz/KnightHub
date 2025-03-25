@@ -1,4 +1,4 @@
-repeat task.wait() until game:IsLoaded()
+repeat task.wait()until game:IsLoaded()
 local Player = game.Players.LocalPlayer
 local character = Player.Character or Player.CharacterAdded:Wait()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -74,6 +74,20 @@ end)
 _G.FastAttack = false  -- Tắt chế độ tấn công nhanh
 
 local Player = game.Players.LocalPlayer
+
+-- Đợi nhân vật xuất hiện
+local character = Player.Character or Player.CharacterAdded:Wait()
+local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
+
+-- Kiểm tra xem nhân vật có tồn tại không
+if not character or not humanoidRootPart or not humanoid then
+    warn("⚠ Lỗi: Không tìm thấy nhân vật hoặc Humanoid!")
+    return
+end
+
+
+
 local character = player.Character or player.CharacterAdded:Wait()
 local Net = game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
 local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
