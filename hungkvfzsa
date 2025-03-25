@@ -69,10 +69,21 @@ function TweenToPosition(targetPosition)
     humanoid:MoveTo(targetPosition)
 end
 
+-- 🚀 Hàm bật/tắt NoClip
+function SetNoClip(state)
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = not state
+        end
+    end
+end
+
 -- 🚀 Hàm bay đến vị trí NPC nhận nhiệm vụ
 function FlyToPosition(targetPosition)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+
+    SetNoClip(true) -- Bật NoClip khi bay
 
     for _, obj in ipairs(hrp:GetChildren()) do
         if obj:IsA("BodyVelocity") or obj:IsA("AlignPosition") then
@@ -88,6 +99,8 @@ function FlyToPosition(targetPosition)
     repeat task.wait() until (hrp.Position - targetPosition).Magnitude < 5
     bodyVelocity:Destroy()
     hrp.CFrame = CFrame.new(targetPosition)
+    
+    SetNoClip(false) -- Tắt NoClip khi đến nơi
 end
 
 -- 🏆 Nhận nhiệm vụ
