@@ -1,4 +1,4 @@
--- 🛠 Khai báo dịch vụ
+-- 🧮 Khai báo dịch vụ
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,7 +22,7 @@ if player.Character then
     onCharacterAdded(player.Character)
 end
 
--- 🖥 Load Fluent UI
+-- 🔦 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 
@@ -51,7 +51,11 @@ _G.AutoQuest = false
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
-        task.spawn(GetQuest) -- Nhận nhiệm vụ ngay khi bật toggle
+        task.spawn(function()
+            if humanoidRootPart then
+                GetQuest()
+            end
+        end)
     end
     while _G.AutoQuest do
         local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
