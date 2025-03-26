@@ -53,26 +53,14 @@ function TweenToPosition(targetPosition)
     local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
     local tweenTime = magnitude / 300  -- Điều chỉnh tốc độ di chuyển
 
-    -- Tạo BodyVelocity để giữ nhân vật không rung
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)  -- Giữ ổn định di chuyển
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Không thay đổi lực
-    bodyVelocity.Parent = humanoidRootPart
-
     -- Tạo tween để di chuyển nhân vật
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
-
-    -- Dùng Move() để hỗ trợ di chuyển mượt hơn
-    humanoid:Move(Vector3.new(targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z), true)
-
+    
     tween:Play()
     tween.Completed:Wait()
-
-    -- Xóa BodyVelocity sau khi tween hoàn tất
-    bodyVelocity:Destroy()
-
-    humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position.X, targetPosition.Y, humanoidRootPart.Position.Z)
+    
+    humanoidRootPart.CFrame = CFrame.new(targetPosition)
 end
 
 -- 🏆 Nhận nhiệm vụ
