@@ -51,7 +51,7 @@ function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
 
     local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
-    local tweenTime = magnitude / 175  -- Điều chỉnh tốc độ di chuyển
+    local tweenTime = magnitude / 300  -- Điều chỉnh tốc độ di chuyển
 
     -- Tạo BodyVelocity để giữ nhân vật không rung
     local bodyVelocity = Instance.new("BodyVelocity")
