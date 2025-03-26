@@ -38,18 +38,11 @@ _G.AutoQuest = false
 
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
-
     if _G.AutoQuest then
-        task.spawn(function()
-            -- 🚀 Khi bật toggle, nhận lại nhiệm vụ ngay lập tức
+        while _G.AutoQuest do
             GetQuest()
-
-            -- 🔁 Tiếp tục auto nhận quest nếu cần
-            while _G.AutoQuest do
-                GetQuest()
-                task.wait(5)  
-            end
-        end)
+            task.wait(5)  
+        end
     end
 end)
 
@@ -60,8 +53,6 @@ function TweenToPosition(targetPosition)
     local speed = 175  
     local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
 
-    humanoidRootPart:SetNetworkOwner(nil)  -- Tắt quyền điều khiển tạm thời
-
     local targetCFrame = CFrame.new(
         targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z,
         humanoidRootPart.CFrame:ToEulerAnglesYXZ()
@@ -71,13 +62,13 @@ function TweenToPosition(targetPosition)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
 
     tween:Play()
-    tween.Completed:Wait()
 
-    humanoidRootPart.CFrame = targetCFrame
+    -- Dùng MoveTo để giữ quyền điều khiển của người chơi
     humanoid:MoveTo(targetPosition)
 
+    tween.Completed:Wait()
+
     task.wait(0.1)
-    humanoidRootPart:SetNetworkOwner(Players.LocalPlayer)  -- Trả lại quyền điều khiển
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -111,11 +102,7 @@ function GetQuest()
         return
     end
 
-    -- 🛑 Kiểm tra nếu đã có nhiệm vụ
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    local hasQuest = questFrame and questFrame.Visible
-
-    -- 🚀 Di chuyển đến NPC nhận nhiệm vụ
+    -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
     TweenToPosition(CFQ.Position)
 
     -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
@@ -123,10 +110,13 @@ function GetQuest()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
 
+    -- 🛑 Kiểm tra nếu đã có nhiệm vụ
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    local hasQuest = questFrame and questFrame.Visible
+    if hasQuest then return end
+
     -- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
-    if not hasQuest then
-        pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-        end)
-    end
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
 end
