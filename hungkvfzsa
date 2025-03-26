@@ -9,6 +9,7 @@ local player = Players.LocalPlayer
 local character
 local humanoidRootPart
 local humanoid
+local noclip = false
 
 local function onCharacterAdded(char)
     character = char
@@ -61,7 +62,7 @@ Toggle:OnChanged(function()
     end
 end)
 
--- 🏃‍♂️ Fix rung camera khi di chuyển bằng BodyVelocity
+-- 🏃‍♂️ Fix rung camera, NoClip và lỗi tốc độ khi di chuyển bằng Tween
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
 
@@ -70,16 +71,19 @@ function TweenToPosition(targetPosition)
     bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
     bodyVelocity.Parent = humanoidRootPart
 
+    noclip = true -- Bật NoClip
+    
     local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
     local tweenTime = magnitude / 300  
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { Position = targetPosition })
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
     
     tween:Play()
     tween.Completed:Wait()
     
     bodyVelocity:Destroy()
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
+    noclip = false -- Tắt NoClip
     task.wait(0.5)
 end
 
