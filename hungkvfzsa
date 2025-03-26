@@ -44,6 +44,9 @@ _G.AutoQuest = false
 
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
+    if _G.AutoQuest then
+        GetQuest() -- Luôn nhận nhiệm vụ ngay khi bật toggle
+    end
     while _G.AutoQuest do
         local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
         if not (questFrame and questFrame.Visible) then
