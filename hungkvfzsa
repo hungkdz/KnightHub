@@ -121,7 +121,12 @@ function GetQuest()
         return
     end
 
-    -- 🚀 Nhận nhiệm vụ mới nếu chưa có
+    -- 🚀 Nhận nhiệm vụ ngay lập tức
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
+
+    -- 📌 Kiểm tra nếu chưa có nhiệm vụ thì tiếp tục nhận
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
     if not (questFrame and questFrame.Visible) then
         pcall(function()
