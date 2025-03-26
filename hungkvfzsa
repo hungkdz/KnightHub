@@ -1,4 +1,4 @@
--- 🛠 Khai báo dịch vụ
+-- 🧐 Khai báo dịch vụ
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,7 +32,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" })
 }
 
--- 🎛️ Thêm Toggle Auto Quest
+-- 🎮 Thêm Toggle Auto Quest
 local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
@@ -46,27 +46,21 @@ Toggle:OnChanged(function()
     end
 end)
 
--- 🏃‍♂️ Fix rung camera khi di chuyển
+-- 🏃️‍♂️ Fix rung camera khi di chuyển
 function TweenToPosition(targetPosition)
     if not humanoidRootPart then return end
 
-    local speed = 175  
-    local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
-
-    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, select(2, humanoidRootPart.CFrame:ToEulerAnglesYXZ()), 0)
+    local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
+    local tweenTime = magnitude / 300  -- Điều chỉnh tốc độ di chuyển
 
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
-
-    humanoid:MoveTo(targetPosition)
-
     tween.Completed:Wait()
 
-    task.wait(0.1)
+    humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position.X, targetPosition.Y, humanoidRootPart.Position.Z)
 end
-
 
 -- 🏆 Nhận nhiệm vụ
 function GetQuest()
@@ -100,14 +94,14 @@ function GetQuest()
     end
 
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
-    TweenToPosition(CFQ.Position)
+    TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
 
     -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
     pcall(function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
 
-    -- 🛑 Kiểm tra nếu đã có nhiệm vụ
+    -- 🚫 Kiểm tra nếu đã có nhiệm vụ
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
     local hasQuest = questFrame and questFrame.Visible
     if hasQuest then return end
