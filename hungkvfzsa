@@ -55,6 +55,7 @@ Toggle:OnChanged(function()
         firstQuestClaimed = false
         task.spawn(function()
             if humanoidRootPart then
+                task.wait(3) -- Đợi 3 giây trước khi nhận nhiệm vụ lần đầu tiên
                 GetQuest()
             end
         end)
