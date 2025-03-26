@@ -52,9 +52,15 @@ Toggle:OnChanged(function()
     end
 end)
 
--- 🏃‍♂️ Fix rung camera khi di chuyển
+-- 🏃‍♂️ Fix rung camera khi di chuyển bằng BodyVelocity
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
+
+    -- Tạo BodyVelocity để giữ nhân vật ổn định
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyVelocity.Parent = humanoidRootPart
 
     local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
     local tweenTime = magnitude / 300  -- Điều chỉnh tốc độ di chuyển
@@ -68,6 +74,9 @@ function TweenToPosition(targetPosition)
     
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
     task.wait(0.5) -- Đợi một chút trước khi nhận nhiệm vụ
+
+    -- Xóa BodyVelocity sau khi tween hoàn tất
+    bodyVelocity:Destroy()
 end
 
 -- 🏆 Nhận nhiệm vụ
