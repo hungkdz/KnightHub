@@ -44,35 +44,26 @@ _G.AutoQuest = false
 
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
-    if _G.AutoQuest then
-        while _G.AutoQuest do
+    while _G.AutoQuest do
+        local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+        if not (questFrame and questFrame.Visible) then
             GetQuest()
-            task.wait(5)  
         end
+        task.wait(5)  
     end
 end)
 
--- 🏃‍♂️ Fix rung camera khi di chuyển bằng BodyVelocity & BodyGyro
+-- 🏃‍♂️ Fix rung camera khi di chuyển bằng BodyVelocity
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
 
-    -- Tạo BodyVelocity để giữ nhân vật ổn định khi di chuyển
     local bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
     bodyVelocity.Parent = humanoidRootPart
 
-    -- Tạo BodyGyro để giữ hướng quay nhân vật
-    local bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.CFrame = humanoidRootPart.CFrame
-    bodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
-    bodyGyro.P = 9e4
-    bodyGyro.Parent = humanoidRootPart
-
     local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
-    local tweenTime = magnitude / 300  -- Điều chỉnh tốc độ di chuyển
-
-    -- Tạo tween để di chuyển nhân vật
+    local tweenTime = magnitude / 300  
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
     
@@ -80,17 +71,13 @@ function TweenToPosition(targetPosition)
     tween.Completed:Wait()
     
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
-    task.wait(0.5) -- Đợi một chút trước khi nhận nhiệm vụ
-
-    -- Xóa BodyVelocity và BodyGyro sau khi tween hoàn tất
+    task.wait(0.5)
     bodyVelocity:Destroy()
-    bodyGyro:Destroy()
 end
 
 -- 🏆 Nhận nhiệm vụ
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
-
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
 
@@ -118,29 +105,26 @@ function GetQuest()
         return
     end
 
+    -- 🛑 Kiểm tra nếu đã có nhiệm vụ trước khi di chuyển
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    if questFrame and questFrame.Visible then
+        return -- Đã có nhiệm vụ, không cần di chuyển
+    end
+
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
     if humanoidRootPart then
         TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
     else
-        return -- Nếu không có humanoidRootPart, không tiếp tục
+        return
     end
 
     -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
     local distance = (humanoidRootPart.Position - Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z)).Magnitude
-    if distance > 5 then -- Chưa đến gần NPC thì không nhận nhiệm vụ
+    if distance > 5 then
         return
     end
 
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-
-    -- 🛑 Kiểm tra nếu đã có nhiệm vụ
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    local hasQuest = questFrame and questFrame.Visible
-    if hasQuest then return end
-
-    -- 🚀 Nếu chưa có nhiệm vụ, nhận nhiệm vụ mới
+    -- 🚀 Nhận nhiệm vụ mới nếu chưa có
     pcall(function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
