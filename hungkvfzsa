@@ -158,16 +158,13 @@ ic2.BorderSizePixel = 1
 ic2.Position = UDim2.new(0, 15, 0.2, 5)
 ic2.Size = UDim2.new(0, 50, 0, 50)
 
-local ic3 = Instance.new("UICorner")
-ic3.CornerRadius = UDim.new(1, 0)
-ic3.Archivable = true
-ic3.Parent = ic2
+local ic5 = Instance.new("ImageLabel")
+ic5.Parent = ic2
+ic5.Size = UDim2.new(0, 40, 0, 40)
+ic5.BackgroundTransparency = 1
 
 local ic4 = Instance.new("TextButton")
 ic4.Parent = ic2
-ic4.Active = true
-ic4.AnchorPoint = Vector2.new(0, 0)
-ic4.BackgroundTransparency = 1
 ic4.Size = UDim2.new(1, 0, 1, 0)
 ic4.Text = ""
 
@@ -177,5 +174,6 @@ ic4.MouseButton1Click:Connect(function()
         Window:Minimize()
     end
     ic2.BackgroundTransparency = isOriginalState and 0 or 0.25
+    ic5.Size = isOriginalState and UDim2.new(0, 40, 0, 40) or UDim2.new(0, 30, 0, 30)
     isOriginalState = not isOriginalState
 end)
