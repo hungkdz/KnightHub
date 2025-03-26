@@ -1,4 +1,4 @@
--- 🛠 Khai báo dịch vụ
+-- 🧐 Khai báo dịch vụ
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,14 +7,8 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local function onCharacterAdded(char)
-    character = char
-    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoid = character:FindFirstChildOfClass("Humanoid")
-end
-
-onCharacterAdded(character)
-player.CharacterAdded:Connect(onCharacterAdded)
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
 
 -- 🖥 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
@@ -38,7 +32,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" })
 }
 
--- 🎛️ Thêm Toggle Auto Quest
+-- 🎮 Thêm Toggle Auto Quest
 local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
@@ -52,7 +46,7 @@ Toggle:OnChanged(function()
     end
 end)
 
--- 🏃‍♂️ Fix rung camera khi di chuyển
+-- 🏃‍♂️ Fix rung camera khi di chuyển (Sửa lỗi nil value)
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
 
@@ -70,9 +64,14 @@ function TweenToPosition(targetPosition)
     task.wait(0.5) -- Đợi một chút trước khi nhận nhiệm vụ
 end
 
--- 🏆 Nhận nhiệm vụ
+-- 🏆 Nhận nhiệm vụ (Sửa lỗi nil value)
 function GetQuest()
-    if not player.Data or not player.Data:FindFirstChild("Level") then return end
+    -- Đợi cho đến khi nhân vật tải xong
+    if not character or not humanoidRootPart or not player.Data then
+        repeat task.wait(1) until character and humanoidRootPart and player.Data
+    end
+
+    if not player.Data:FindFirstChild("Level") then return end
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
