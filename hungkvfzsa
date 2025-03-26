@@ -32,6 +32,7 @@ local Window = Library:CreateWindow({
     Size = UDim2.fromOffset(480, 370),
     Acrylic = true,
     Theme = "Dark"
+    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
 })
 
 local Tabs = {
@@ -67,6 +68,7 @@ function TweenToPosition(targetPosition)
     tween.Completed:Wait()
     
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
+    task.wait(0.5) -- Đợi một chút trước khi nhận nhiệm vụ
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -103,9 +105,16 @@ function GetQuest()
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
     if humanoidRootPart then
         TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
+    else
+        return -- Nếu không có humanoidRootPart, không tiếp tục
     end
 
-    -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
+    -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+    local distance = (humanoidRootPart.Position - CFQ.Position).Magnitude
+    if distance > 5 then -- Chưa đến gần NPC thì không nhận nhiệm vụ
+        return
+    end
+
     pcall(function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
     end)
