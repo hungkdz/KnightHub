@@ -32,7 +32,6 @@ local Window = Library:CreateWindow({
     Size = UDim2.fromOffset(480, 370),
     Acrylic = true,
     Theme = "Dark"
-    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
 })
 
 local Tabs = {
