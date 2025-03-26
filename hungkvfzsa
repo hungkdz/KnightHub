@@ -81,27 +81,6 @@ function TweenToPosition(targetPosition)
     humanoid:MoveTo(targetPosition)
 end
 
--- 🚀 Hàm bay đến vị trí NPC nhận nhiệm vụ
-function FlyToPosition(targetPosition)
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    for _, obj in ipairs(hrp:GetChildren()) do
-        if obj:IsA("BodyVelocity") or obj:IsA("AlignPosition") then
-            obj:Destroy()
-        end
-    end
-
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = (targetPosition - hrp.Position).unit * 100 
-    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bodyVelocity.Parent = hrp
-
-    repeat task.wait() until (hrp.Position - targetPosition).Magnitude < 5
-    bodyVelocity:Destroy()
-    hrp.CFrame = CFrame.new(targetPosition)
-end
-
 -- 🏆 Nhận nhiệm vụ
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
@@ -138,7 +117,7 @@ function GetQuest()
     local hasQuest = questFrame and questFrame.Visible
 
     -- 🚀 Luôn bay đến NPC ngay lập tức khi bật toggle
-    FlyToPosition(CFQ.Position)
+    TweenToPosition(CFQ.Position)
     task.wait(0.5)
 
     -- 🔁 Nếu đã có nhiệm vụ, nhận lại một lần
