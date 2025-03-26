@@ -45,7 +45,7 @@ _G.AutoQuest = false
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
-        GetQuest() -- Luôn nhận nhiệm vụ ngay khi bật toggle
+        GetQuest() -- Nhận nhiệm vụ ngay khi bật toggle
     end
     while _G.AutoQuest do
         local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
@@ -108,12 +108,6 @@ function GetQuest()
         return
     end
 
-    -- 🛑 Kiểm tra nếu đã có nhiệm vụ trước khi di chuyển
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    if questFrame and questFrame.Visible then
-        return -- Đã có nhiệm vụ, không cần di chuyển
-    end
-
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
     if humanoidRootPart then
         TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
@@ -128,7 +122,10 @@ function GetQuest()
     end
 
     -- 🚀 Nhận nhiệm vụ mới nếu chưa có
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    if not (questFrame and questFrame.Visible) then
+        pcall(function()
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+        end)
+    end
 end
