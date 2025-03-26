@@ -6,15 +6,20 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
+local character
+local humanoidRootPart
+local humanoid
+
 local function onCharacterAdded(char)
     character = char
     humanoidRootPart = character:WaitForChild("HumanoidRootPart")
     humanoid = character:FindFirstChildOfClass("Humanoid")
 end
 
-onCharacterAdded(character)
 player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then
+    onCharacterAdded(player.Character)
+end
 
 -- 🖥 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
@@ -68,14 +73,14 @@ function TweenToPosition(targetPosition)
     local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
     local tweenTime = magnitude / 300  
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { Position = targetPosition })
     
     tween:Play()
     tween.Completed:Wait()
     
+    bodyVelocity:Destroy()
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
     task.wait(0.5)
-    bodyVelocity:Destroy()
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -110,13 +115,13 @@ function GetQuest()
 
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
     if humanoidRootPart then
-        TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
+        TweenToPosition(Vector3.new(CFQ.X, CFQ.Y, CFQ.Z))
     else
         return
     end
 
     -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-    local distance = (humanoidRootPart.Position - Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z)).Magnitude
+    local distance = (humanoidRootPart.Position - Vector3.new(CFQ.X, CFQ.Y, CFQ.Z)).Magnitude
     if distance > 5 then
         return
     end
