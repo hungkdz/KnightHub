@@ -4,7 +4,6 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local Camera = Workspace.CurrentCamera
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -26,8 +25,7 @@ local Window = Library:CreateWindow({
     TabWidth = 160,
     Size = UDim2.fromOffset(480, 370),
     Acrylic = true,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
+    Theme = "Dark"
 })
 
 local Tabs = {
@@ -35,16 +33,30 @@ local Tabs = {
 }
 
 -- 🎛️ Thêm Toggle Auto Quest
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Farm Level", Default = false })
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Farm Level", Default = false }) 
 _G.AutoQuest = false  
 
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
+
     if _G.AutoQuest then
-        while _G.AutoQuest do
+        task.spawn(function()
+            -- 🚀 Bay đến NPC và nhận lại nhiệm vụ ngay khi bật toggle
             GetQuest()
-            task.wait(5)  
-        end
+
+            -- 🔁 Tiếp tục auto nhận quest nếu cần
+            while _G.AutoQuest do
+                local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+                local hasQuest = questFrame and questFrame.Visible
+                local currentQuestText = questFrame and questFrame.Title.Text or ""
+
+                if not hasQuest or not string.find(currentQuestText, NameQuest) then
+                    GetQuest()
+                end
+
+                task.wait(5)
+            end
+        end)
     end
 end)
 
@@ -55,8 +67,6 @@ function TweenToPosition(targetPosition)
     local speed = 175  
     local tweenTime = (humanoidRootPart.Position - targetPosition).Magnitude / speed
 
-    humanoidRootPart:SetNetworkOwner(nil)  -- Tắt quyền điều khiển tạm thời
-
     local targetCFrame = CFrame.new(
         targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z,
         humanoidRootPart.CFrame:ToEulerAnglesYXZ()
@@ -65,25 +75,31 @@ function TweenToPosition(targetPosition)
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
 
-    -- Cập nhật camera để theo dõi nhân vật
-    Camera.CameraType = Enum.CameraType.Scriptable
-    local function updateCamera()
-        Camera.CFrame = humanoidRootPart.CFrame * CFrame.new(0, 5, -10)
-    end
-
-    local connection = game:GetService("RunService").RenderStepped:Connect(updateCamera)
-
     tween:Play()
     tween.Completed:Wait()
-
-    connection:Disconnect()
-    Camera.CameraType = Enum.CameraType.Custom
-    
     humanoidRootPart.CFrame = targetCFrame
     humanoid:MoveTo(targetPosition)
+end
 
-    task.wait(0.1)
-    humanoidRootPart:SetNetworkOwner(Players.LocalPlayer)  -- Trả lại quyền điều khiển
+-- 🚀 Hàm bay đến vị trí NPC nhận nhiệm vụ
+function FlyToPosition(targetPosition)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    for _, obj in ipairs(hrp:GetChildren()) do
+        if obj:IsA("BodyVelocity") or obj:IsA("AlignPosition") then
+            obj:Destroy()
+        end
+    end
+
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = (targetPosition - hrp.Position).unit * 100 
+    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVelocity.Parent = hrp
+
+    repeat task.wait() until (hrp.Position - targetPosition).Magnitude < 5
+    bodyVelocity:Destroy()
+    hrp.CFrame = CFrame.new(targetPosition)
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -117,63 +133,24 @@ function GetQuest()
         return
     end
 
-    -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-
     -- 🛑 Kiểm tra nếu đã có nhiệm vụ
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
     local hasQuest = questFrame and questFrame.Visible
 
-    if not hasQuest then
-        -- 🚀 Nếu chưa có nhiệm vụ, di chuyển đến NPC để nhận nhiệm vụ
-        TweenToPosition(CFQ.Position)
-        task.wait(0.5)  -- Đợi một chút trước khi gửi yêu cầu nhận nhiệm vụ
+    -- 🚀 Luôn bay đến NPC ngay lập tức khi bật toggle
+    FlyToPosition(CFQ.Position)
+    task.wait(0.5)
 
+    -- 🔁 Nếu đã có nhiệm vụ, nhận lại một lần
+    if hasQuest then
         pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+            task.wait(0.5)
         end)
     end
+
+    -- 🏆 Nhận nhiệm vụ mới
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
 end
-
--- 🖥️ Thêm GUI
-local ic = Instance.new("ScreenGui")
-ic.Parent = game.CoreGui
-ic.Name = "knight"
-ic.ClipToDeviceSafeArea = true
-ic.Enabled = true
-ic.ResetOnSpawn = true
-ic.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ic.Archivable = true
-ic.AutoLocalize = true
-
-local ic2 = Instance.new("Frame")
-ic2.Parent = ic
-ic2.Name = "dz"
-ic2.AnchorPoint = Vector2.new(0, 1)
-ic2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ic2.BackgroundTransparency = 0
-ic2.BorderSizePixel = 1
-ic2.Position = UDim2.new(0, 15, 0.2, 5)
-ic2.Size = UDim2.new(0, 50, 0, 50)
-
-local ic5 = Instance.new("ImageLabel")
-ic5.Parent = ic2
-ic5.Size = UDim2.new(0, 40, 0, 40)
-ic5.BackgroundTransparency = 1
-
-local ic4 = Instance.new("TextButton")
-ic4.Parent = ic2
-ic4.Size = UDim2.new(1, 0, 1, 0)
-ic4.Text = ""
-
-local isOriginalState = true
-ic4.MouseButton1Click:Connect(function()
-    if Window and typeof(Window.Minimize) == "function" then
-        Window:Minimize()
-    end
-    ic2.BackgroundTransparency = isOriginalState and 0 or 0.25
-    ic5.Size = isOriginalState and UDim2.new(0, 40, 0, 40) or UDim2.new(0, 30, 0, 30)
-    isOriginalState = not isOriginalState
-end)
