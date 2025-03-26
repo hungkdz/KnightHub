@@ -10,6 +10,7 @@ local character
 local humanoidRootPart
 local humanoid
 local noclip = false
+local firstQuestClaimed = false
 
 local function onCharacterAdded(char)
     character = char
@@ -51,6 +52,7 @@ _G.AutoQuest = false
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
+        firstQuestClaimed = false
         task.spawn(function()
             if humanoidRootPart then
                 GetQuest()
@@ -134,10 +136,13 @@ function GetQuest()
         return
     end
 
-    -- 🚀 Nhận nhiệm vụ ngay lập tức
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
+    -- 🚀 Nhận nhiệm vụ ngay lập tức chỉ lần đầu tiên
+    if not firstQuestClaimed then
+        pcall(function()
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+        end)
+        firstQuestClaimed = true
+    end
 
     -- 📌 Kiểm tra nếu chưa có nhiệm vụ thì tiếp tục nhận
     task.wait(1) -- Đợi một chút trước khi kiểm tra
