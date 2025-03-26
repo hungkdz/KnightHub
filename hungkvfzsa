@@ -7,8 +7,14 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:FindFirstChildOfClass("Humanoid")
+local function onCharacterAdded(char)
+    character = char
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoid = character:FindFirstChildOfClass("Humanoid")
+end
+
+onCharacterAdded(character)
+player.CharacterAdded:Connect(onCharacterAdded)
 
 -- 🖥 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
@@ -95,7 +101,9 @@ function GetQuest()
     end
 
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
-    TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
+    if humanoidRootPart then
+        TweenToPosition(Vector3.new(CFQ.X, humanoidRootPart.Position.Y, CFQ.Z))
+    end
 
     -- 🏁 Luôn nhận lại nhiệm vụ trước khi kiểm tra
     pcall(function()
