@@ -53,34 +53,45 @@ function HasActiveQuest()
     return questFrame and questFrame.Visible
 end
 
--- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity (chỉ khi bật Auto Quest)
+-- 🏃‍♂️ Tween đến vị trí (chống rung, không rơi ra biển)
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
 
     local distance = (targetPosition - humanoidRootPart.Position).Magnitude
     if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
-    -- Tạo BodyVelocity nếu Auto Quest đang bật
-    local bodyVelocity
-    if _G.AutoQuest then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
-        bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        bodyVelocity.Parent = humanoidRootPart
-    end
+    -- Tạo BodyVelocity để tránh rung nhân vật khi tween
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyVelocity.Parent = humanoidRootPart
 
-    -- Thiết lập TweenService
-    local tweenTime = math.min(distance / 250, 5)  -- Giới hạn thời gian tween
+    -- Tạo BodyPosition giữ nhân vật tại vị trí sau khi đến nơi
+    local bodyPosition = Instance.new("BodyPosition")
+    bodyPosition.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyPosition.Position = targetPosition
+    bodyPosition.Parent = humanoidRootPart
+
+    -- Thiết lập TweenService (giảm tốc độ xuống 200)
+    local tweenTime = math.min(distance / 200, 5)  -- Giới hạn thời gian tween
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
     tween.Completed:Wait()
 
-    -- Xóa BodyVelocity sau khi tween xong
-    if bodyVelocity then
-        bodyVelocity:Destroy()
+    -- Đợi 0.5 giây trước khi xóa BodyVelocity (giữ vị trí ổn định)
+    task.wait(0.5)
+    bodyVelocity:Destroy()
+
+    -- Kiểm tra lại vị trí, nếu chưa đúng thì đặt lại
+    if (humanoidRootPart.Position - targetPosition).Magnitude > 5 then
+        humanoidRootPart.CFrame = CFrame.new(targetPosition)
     end
+
+    -- Xóa BodyPosition sau 1 giây (đảm bảo nhân vật không rơi ra biển)
+    task.wait(1)
+    bodyPosition:Destroy()
 end
 
 -- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
@@ -122,26 +133,3 @@ function GetQuest()
     end
 
     -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
-
-    -- 🔄 Nhận nhiệm vụ
-    local success = pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-
-    -- Nếu nhận thành công, cập nhật LastQuest
-    if success then
-        LastQuest = NameQuest
-    end
-end
-
--- 🎛️ Kích hoạt Auto Quest
-Toggle:OnChanged(function()
-    _G.AutoQuest = Toggle.Value  
-    if _G.AutoQuest then
-        while _G.AutoQuest do
-            GetQuest()
-            task.wait(2)  
-        end
-    end
-end)
