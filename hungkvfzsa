@@ -53,9 +53,12 @@ function HasActiveQuest()
     return questFrame and questFrame.Visible
 end
 
--- 🏃‍♂️ Tween đến vị trí (chống rung, không rơi ra biển)
+-- 🏃‍♂️ Tween đến vị trí (Fix lỗi nil value)
 function TweenToPosition(targetPosition)
-    if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
+    if not humanoidRootPart or not humanoid or not _G.AutoQuest or not targetPosition then 
+        warn("❌ Lỗi: TweenToPosition bị gọi với giá trị nil!")
+        return 
+    end
 
     local distance = (targetPosition - humanoidRootPart.Position).Magnitude
     if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
@@ -94,9 +97,12 @@ function TweenToPosition(targetPosition)
     bodyPosition:Destroy()
 end
 
--- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
+-- 🏆 Nhận nhiệm vụ (Fix lỗi nil value)
 function GetQuest()
-    if not player.Data or not player.Data:FindFirstChild("Level") then return end
+    if not player.Data or not player.Data:FindFirstChild("Level") then 
+        warn("❌ Lỗi: Không tìm thấy dữ liệu cấp độ nhân vật!")
+        return 
+    end
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
@@ -123,13 +129,40 @@ function GetQuest()
         LevelQ = 2
         CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
     else
+        warn("❌ Không có nhiệm vụ phù hợp!")
         return
     end
 
     -- 📌 Nếu nhiệm vụ thay đổi hoặc chưa có nhiệm vụ, di chuyển đến NPC
     if LastQuest ~= NameQuest then
+        print("🛠 Đang nhận nhiệm vụ mới:", NameQuest)
         LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
         TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
     end
 
     -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+
+    -- 🔄 Nhận nhiệm vụ (Fix lỗi nil value)
+    local success, errorMsg = pcall(function()
+        return ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
+
+    if not success then
+        warn("❌ Lỗi khi nhận nhiệm vụ:", errorMsg)
+    else
+        print("✅ Đã nhận nhiệm vụ:", NameQuest)
+        LastQuest = NameQuest
+    end
+end
+
+-- 🎛️ Kích hoạt Auto Quest
+Toggle:OnChanged(function()
+    _G.AutoQuest = Toggle.Value  
+    if _G.AutoQuest then
+        while _G.AutoQuest do
+            GetQuest()
+            task.wait(2)  
+        end
+    end
+end)
