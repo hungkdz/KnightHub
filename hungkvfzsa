@@ -46,8 +46,8 @@ Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
         while _G.AutoQuest do
-            GetQuest()
-            task.wait(5)  
+            CheckQuest()
+            task.wait(2)  
         end
     end
 end)
@@ -83,11 +83,9 @@ function HasActiveQuest()
     return questFrame and questFrame.Visible
 end
 
--- 🏆 Nhận nhiệm vụ
-function GetQuest()
+-- 📌 Kiểm tra và nhận nhiệm vụ mới nếu cấp độ thay đổi
+function CheckQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
-
-    if HasActiveQuest() then return end -- Nếu đã có nhiệm vụ, không di chuyển nữa
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
@@ -114,6 +112,14 @@ function GetQuest()
         CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
     else
         return
+    end
+
+    -- Nếu có nhiệm vụ nhưng không đúng cấp độ, hủy nhiệm vụ cũ
+    if HasActiveQuest() then
+        pcall(function()
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+        end)
+        task.wait(1) -- Đợi trước khi nhận nhiệm vụ mới
     end
 
     -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
