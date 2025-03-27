@@ -70,7 +70,6 @@ function TweenToPosition(targetPosition)
     tween:Play()
     tween.Completed:Wait()
     
-    -- Đảm bảo nhân vật không bị mất kiểm soát
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
     task.wait(0.5) 
@@ -81,6 +80,10 @@ end
 -- 🏆 Nhận nhiệm vụ
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
+
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    local hasQuest = questFrame and questFrame.Visible
+    if hasQuest then return end -- Nếu đã có nhiệm vụ, không di chuyển nữa
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
@@ -121,14 +124,6 @@ function GetQuest()
     if distance > 5 then 
         return
     end
-
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    local hasQuest = questFrame and questFrame.Visible
-    if hasQuest then return end
 
     pcall(function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
