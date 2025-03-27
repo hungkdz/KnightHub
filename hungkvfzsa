@@ -7,8 +7,8 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart, humanoid
-local LastQuest = nil  -- Lưu nhiệm vụ cuối cùng đã nhận
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
 
 local function onCharacterAdded(char)
     character = char
@@ -16,7 +16,6 @@ local function onCharacterAdded(char)
     humanoid = character:FindFirstChildOfClass("Humanoid")
 end
 
-onCharacterAdded(character)
 player.CharacterAdded:Connect(onCharacterAdded)
 
 -- 🖥 Load Fluent UI
@@ -42,80 +41,112 @@ local Tabs = {
 }
 
 -- 🎛️ Thêm Toggle Auto Quest
-local Toggle = Tabs.Main:AddToggle("AutoQuest", { Title = "Auto Quest", Default = false })
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
-Toggle:OnChanged(function()
-    _G.AutoQuest = Toggle.Value  
-    if _G.AutoQuest then
-        task.spawn(function()
-            while _G.AutoQuest do
-                GetQuest()
-                task.wait(1.5)
-            end
-        end)
-    end
-end)
+-- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
+local LastQuest = nil  
 
--- 🏃‍♂️ Tween đến vị trí mượt hơn
+-- 📌 Kiểm tra nhân vật có nhiệm vụ không
+function HasActiveQuest()
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    return questFrame and questFrame.Visible
+end
+
+-- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity (chỉ khi bật Auto Quest)
 function TweenToPosition(targetPosition)
-    if not humanoidRootPart or not humanoid then return end
+    if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
 
     local distance = (targetPosition - humanoidRootPart.Position).Magnitude
     if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
+    -- Tạo BodyVelocity nếu Auto Quest đang bật
+    local bodyVelocity
+    if _G.AutoQuest then
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
+        bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bodyVelocity.Parent = humanoidRootPart
+    end
+
+    -- Thiết lập TweenService
     local tweenTime = math.min(distance / 250, 5)  -- Giới hạn thời gian tween
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
     tween.Completed:Wait()
-    humanoidRootPart.CFrame = CFrame.new(targetPosition)
-end
 
--- 📌 Hàm kiểm tra nhiệm vụ hiện tại
-function HasActiveQuest()
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    return questFrame and questFrame.Visible
+    -- Kiểm tra lại khoảng cách, nếu chưa đến nơi thì di chuyển lại
+    if (humanoidRootPart.Position - targetPosition).Magnitude > 5 then
+        humanoidRootPart.Position = targetPosition
+    end
+
+    -- Xóa BodyVelocity sau khi tween xong
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+    end
 end
 
 -- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
-    if HasActiveQuest() and LastQuest then return end  -- Giữ nhiệm vụ cũ nếu đã có
 
     local level = player.Data.Level.Value  
-    local quests = {
-        {1, 9, "BanditQuest1", 1, CFrame.new(1050, 16, 1540)},
-        {10, 14, "JungleQuest", 1, CFrame.new(-1600, 36, 150)},
-        {15, 29, "JungleQuest", 2, CFrame.new(-1600, 36, 150)},
-        {30, 39, "BuggyQuest1", 1, CFrame.new(-1130, 4, 3820)},
-        {40, 59, "BuggyQuest1", 2, CFrame.new(-1140.176, 4.752, 3827.405)}
-    }
+    local NameQuest, LevelQ, CFQ
 
-    local NameQuest, LevelQ, CFQ = nil, nil, nil
-    for _, quest in ipairs(quests) do
-        if level >= quest[1] and level <= quest[2] then
-            NameQuest, LevelQ, CFQ = quest[3], quest[4], quest[5]
-            break
-        end
+    -- 📌 Xác định nhiệm vụ theo cấp độ
+    if level >= 1 and level <= 9 then
+        NameQuest = "BanditQuest1"
+        LevelQ = 1
+        CFQ = CFrame.new(1050, 16, 1540)  
+    elseif level >= 10 and level <= 14 then
+        NameQuest = "JungleQuest"
+        LevelQ = 1
+        CFQ = CFrame.new(-1600, 36, 150)  
+    elseif level >= 15 and level <= 29 then
+        NameQuest = "JungleQuest"
+        LevelQ = 2
+        CFQ = CFrame.new(-1600, 36, 150)  
+    elseif level >= 30 and level <= 39 then
+        NameQuest = "BuggyQuest1"
+        LevelQ = 1
+        CFQ = CFrame.new(-1130, 4, 3820)  
+    elseif level >= 40 and level <= 59 then
+        NameQuest = "BuggyQuest1"
+        LevelQ = 2
+        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
+    else
+        return
     end
 
-    if not NameQuest then return end
-
-    -- Chỉ nhận nhiệm vụ mới nếu khác nhiệm vụ trước đó
+    -- 📌 Nếu nhiệm vụ thay đổi hoặc chưa có nhiệm vụ, di chuyển đến NPC
     if LastQuest ~= NameQuest then
-        LastQuest = NameQuest  -- Cập nhật nhiệm vụ đã nhận
+        LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
+        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
+    end
 
-        -- 🔄 Di chuyển đến NPC
-        TweenToPosition(CFQ.Position)
+    -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
 
-        -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-        if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+    -- 🔄 Nhận nhiệm vụ
+    local success = pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
 
-        -- Nhận nhiệm vụ mới
-        pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-        end)
+    -- Nếu nhận thành công, cập nhật LastQuest
+    if success then
+        LastQuest = NameQuest
     end
 end
+
+-- 🎛️ Kích hoạt Auto Quest
+Toggle:OnChanged(function()
+    _G.AutoQuest = Toggle.Value  
+    if _G.AutoQuest then
+        while _G.AutoQuest do
+            GetQuest()
+            task.wait(2)  
+        end
+    end
+end)
