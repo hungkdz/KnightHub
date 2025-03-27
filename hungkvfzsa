@@ -78,12 +78,17 @@ function TweenToPosition(targetPosition)
 end
 
 -- 📌 Hàm kiểm tra nhiệm vụ hiện tại
-function HasActiveQuest()
+function GetCurrentQuest()
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    return questFrame and questFrame.Visible
+    if questFrame and questFrame.Visible then
+        local questTitle = questFrame.Title.Text 
+        return questTitle
+    end
+    return nil
 end
 
 -- 📌 Kiểm tra và nhận nhiệm vụ mới nếu cấp độ thay đổi
+local lastQuest = ""
 function CheckQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
@@ -114,28 +119,38 @@ function CheckQuest()
         return
     end
 
-    -- Nếu có nhiệm vụ nhưng không đúng cấp độ, hủy nhiệm vụ cũ
-    if HasActiveQuest() then
+    local currentQuest = GetCurrentQuest()
+    if currentQuest and currentQuest:match(NameQuest) then
+        return -- Nếu nhiệm vụ hiện tại đúng với cấp độ, không làm gì cả
+    end
+
+    -- Nếu nhiệm vụ mới khác nhiệm vụ cũ, nhận lại nhiệm vụ
+    if NameQuest ~= lastQuest then
+        lastQuest = NameQuest
+
+        -- Nếu nhiệm vụ không phù hợp, hủy nhiệm vụ cũ
+        if currentQuest then
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+            end)
+            task.wait(1) 
+        end
+    
+        -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
+        if humanoidRootPart then
+            TweenToPosition(CFQ.Position)
+        else
+            return
+        end
+    
+        -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+        local distance = (humanoidRootPart.Position - CFQ.Position).Magnitude
+        if distance > 5 then 
+            return
+        end
+    
         pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
         end)
-        task.wait(1) -- Đợi trước khi nhận nhiệm vụ mới
     end
-
-    -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
-    if humanoidRootPart then
-        TweenToPosition(CFQ.Position)
-    else
-        return
-    end
-
-    -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-    local distance = (humanoidRootPart.Position - CFQ.Position).Magnitude
-    if distance > 5 then 
-        return
-    end
-
-    pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
 end
