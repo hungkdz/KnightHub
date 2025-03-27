@@ -11,6 +11,7 @@ local humanoidRootPart
 local humanoid
 local noclip = false
 local firstQuestClaimed = false
+local isFirstToggle = true
 
 local function onCharacterAdded(char)
     character = char
@@ -53,9 +54,12 @@ Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
         firstQuestClaimed = false
+        if isFirstToggle then
+            isFirstToggle = false
+            task.wait(3) -- Đợi 3 giây trước khi nhận nhiệm vụ lần đầu tiên
+        end
         task.spawn(function()
             if humanoidRootPart then
-                task.wait(3) -- Đợi 3 giây trước khi nhận nhiệm vụ lần đầu tiên
                 GetQuest()
             end
         end)
