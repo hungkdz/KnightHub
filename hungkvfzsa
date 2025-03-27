@@ -7,6 +7,9 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart, humanoid
+local LastQuest = nil  -- Lưu nhiệm vụ cuối cùng đã nhận
+
 local function onCharacterAdded(char)
     character = char
     humanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -39,116 +42,78 @@ local Tabs = {
 }
 
 -- 🎛️ Thêm Toggle Auto Quest
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
+local Toggle = Tabs.Main:AddToggle("AutoQuest", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
-        while _G.AutoQuest do
-            CheckQuest()
-            task.wait(2)  
-        end
+        task.spawn(function()
+            while _G.AutoQuest do
+                GetQuest()
+                task.wait(1.5)
+            end
+        end)
     end
 end)
 
--- 🏃‍♂️ Fix rung camera khi di chuyển bằng BodyVelocity
+-- 🏃‍♂️ Tween đến vị trí mượt hơn
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
 
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-    bodyVelocity.Parent = humanoidRootPart
+    local distance = (targetPosition - humanoidRootPart.Position).Magnitude
+    if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
-    local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
-    local tweenTime = magnitude / 300  
-
+    local tweenTime = math.min(distance / 250, 5)  -- Giới hạn thời gian tween
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
-    
+
     tween:Play()
     tween.Completed:Wait()
-    
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
-    task.wait(0.5) 
-    
-    bodyVelocity:Destroy()
 end
 
 -- 📌 Hàm kiểm tra nhiệm vụ hiện tại
-function GetCurrentQuest()
+function HasActiveQuest()
     local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    if questFrame and questFrame.Visible then
-        local questTitle = questFrame.Title.Text 
-        return questTitle
-    end
-    return nil
+    return questFrame and questFrame.Visible
 end
 
--- 📌 Kiểm tra và nhận nhiệm vụ mới nếu cấp độ thay đổi
-local lastQuest = ""
-function CheckQuest()
+-- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
+function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
+    if HasActiveQuest() and LastQuest then return end  -- Giữ nhiệm vụ cũ nếu đã có
 
     local level = player.Data.Level.Value  
-    local NameQuest, LevelQ, CFQ
+    local quests = {
+        {1, 9, "BanditQuest1", 1, CFrame.new(1050, 16, 1540)},
+        {10, 14, "JungleQuest", 1, CFrame.new(-1600, 36, 150)},
+        {15, 29, "JungleQuest", 2, CFrame.new(-1600, 36, 150)},
+        {30, 39, "BuggyQuest1", 1, CFrame.new(-1130, 4, 3820)},
+        {40, 59, "BuggyQuest1", 2, CFrame.new(-1140.176, 4.752, 3827.405)}
+    }
 
-    if level >= 1 and level <= 9 then
-        NameQuest = "BanditQuest1"
-        LevelQ = 1
-        CFQ = CFrame.new(1050, 16, 1540)  
-    elseif level >= 10 and level <= 14 then
-        NameQuest = "JungleQuest"
-        LevelQ = 1
-        CFQ = CFrame.new(-1600, 36, 150)  
-    elseif level >= 15 and level <= 29 then
-        NameQuest = "JungleQuest"
-        LevelQ = 2
-        CFQ = CFrame.new(-1600, 36, 150)  
-    elseif level >= 30 and level <= 39 then
-        NameQuest = "BuggyQuest1"
-        LevelQ = 1
-        CFQ = CFrame.new(-1130, 4, 3820)  
-    elseif level >= 40 and level <= 59 then
-        NameQuest = "BuggyQuest1"
-        LevelQ = 2
-        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
-    else
-        return
+    local NameQuest, LevelQ, CFQ = nil, nil, nil
+    for _, quest in ipairs(quests) do
+        if level >= quest[1] and level <= quest[2] then
+            NameQuest, LevelQ, CFQ = quest[3], quest[4], quest[5]
+            break
+        end
     end
 
-    local currentQuest = GetCurrentQuest()
-    if currentQuest and currentQuest:match(NameQuest) then
-        return -- Nếu nhiệm vụ hiện tại đúng với cấp độ, không làm gì cả
-    end
+    if not NameQuest then return end
 
-    -- Nếu nhiệm vụ mới khác nhiệm vụ cũ, nhận lại nhiệm vụ
-    if NameQuest ~= lastQuest then
-        lastQuest = NameQuest
+    -- Chỉ nhận nhiệm vụ mới nếu khác nhiệm vụ trước đó
+    if LastQuest ~= NameQuest then
+        LastQuest = NameQuest  -- Cập nhật nhiệm vụ đã nhận
 
-        -- Nếu nhiệm vụ không phù hợp, hủy nhiệm vụ cũ
-        if currentQuest then
-            pcall(function()
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("AbandonQuest")
-            end)
-            task.wait(1) 
-        end
-    
-        -- 🔄 Di chuyển đến NPC nhận nhiệm vụ
-        if humanoidRootPart then
-            TweenToPosition(CFQ.Position)
-        else
-            return
-        end
-    
-        -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-        local distance = (humanoidRootPart.Position - CFQ.Position).Magnitude
-        if distance > 5 then 
-            return
-        end
-    
+        -- 🔄 Di chuyển đến NPC
+        TweenToPosition(CFQ.Position)
+
+        -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+        if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+
+        -- Nhận nhiệm vụ mới
         pcall(function()
             ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
         end)
