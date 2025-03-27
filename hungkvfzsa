@@ -66,7 +66,7 @@ Toggle:OnChanged(function()
     end
     while _G.AutoQuest do
         local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-        if not (questFrame and questFrame.Visible) then
+        if not (questFrame and questFrame.Visible) or CheckQuestMismatch() then
             GetQuest()
         end
         task.wait(5)  
@@ -98,6 +98,19 @@ function TweenToPosition(targetPosition)
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
     noclip = false -- Tắt NoClip
     task.wait(0.5)
+end
+
+-- 🏆 Kiểm tra nhiệm vụ có phù hợp với level hiện tại không
+function CheckQuestMismatch()
+    if not player.Data or not player.Data:FindFirstChild("Level") then return false end
+    local level = player.Data.Level.Value  
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    if questFrame and questFrame.Visible then
+        local currentQuestName = questFrame.Title.Text -- Giả sử tên nhiệm vụ hiển thị ở đây
+        local expectedQuestName = GetExpectedQuestName(level)
+        return currentQuestName ~= expectedQuestName
+    end
+    return false
 end
 
 -- 🏆 Nhận nhiệm vụ
@@ -145,20 +158,11 @@ function GetQuest()
         return
     end
 
-    -- 🚀 Nhận nhiệm vụ ngay lập tức chỉ lần đầu tiên
-    if not firstQuestClaimed then
+    -- 🚀 Nhận nhiệm vụ nếu chưa có hoặc không đúng nhiệm vụ
+    if CheckQuestMismatch() or not firstQuestClaimed then
         pcall(function()
             ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
         end)
         firstQuestClaimed = true
-    end
-
-    -- 📌 Kiểm tra nếu chưa có nhiệm vụ thì tiếp tục nhận
-    task.wait(1) -- Đợi một chút trước khi kiểm tra
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    if not (questFrame and questFrame.Visible) then
-        pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-        end)
     end
 end
