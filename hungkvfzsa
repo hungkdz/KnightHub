@@ -10,7 +10,6 @@ local character
 local humanoidRootPart
 local humanoid
 local noclip = false
-local firstQuestClaimed = false
 local isFirstToggle = true
 
 local function onCharacterAdded(char)
@@ -53,29 +52,25 @@ _G.AutoQuest = false
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
-        firstQuestClaimed = false
         if isFirstToggle then
             isFirstToggle = false
             task.wait(3) -- Đợi 3 giây trước khi bắt đầu
         end
-        task.spawn(function()
-            if humanoidRootPart then
-                GetQuest()
-            end
-        end)
     end
     while _G.AutoQuest do
-        local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-        if not (questFrame and questFrame.Visible) or CheckQuestMismatch() then
+        task.wait(5)  
+        if CheckQuestMismatch() then
             GetQuest()
         end
-        task.wait(5)  
     end
 end)
 
 -- 🏃‍♂️ Fix rung camera, NoClip và lỗi tốc độ khi di chuyển bằng Tween
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
+
+    local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
+    if magnitude < 5 then return end -- Không tween nếu khoảng cách quá gần
 
     task.wait(3) -- Delay 3 giây trước khi tween
 
@@ -86,7 +81,6 @@ function TweenToPosition(targetPosition)
 
     noclip = true -- Bật NoClip
     
-    local magnitude = (targetPosition - humanoidRootPart.Position).Magnitude
     local tweenTime = magnitude / 300  
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
@@ -143,26 +137,25 @@ function GetQuest()
         return
     end
 
-    -- 🔄 Delay trước khi di chuyển đến NPC nhận nhiệm vụ
-    task.wait(3)
+    -- 🔄 Kiểm tra nhiệm vụ trước khi dịch chuyển
+    if not CheckQuestMismatch() then
+        return
+    end
+    
+    task.wait(3) -- Đợi trước khi tween
     
     if humanoidRootPart then
         TweenToPosition(Vector3.new(CFQ.X, CFQ.Y, CFQ.Z))
     else
         return
     end
-
-    -- 🏁 Kiểm tra lại nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+    
     local distance = (humanoidRootPart.Position - Vector3.new(CFQ.X, CFQ.Y, CFQ.Z)).Magnitude
     if distance > 5 then
         return
     end
-
-    -- 🚀 Nhận nhiệm vụ nếu chưa có hoặc không đúng nhiệm vụ
-    if CheckQuestMismatch() or not firstQuestClaimed then
-        pcall(function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-        end)
-        firstQuestClaimed = true
-    end
+    
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
 end
