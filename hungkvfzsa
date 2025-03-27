@@ -77,11 +77,6 @@ function TweenToPosition(targetPosition)
     tween:Play()
     tween.Completed:Wait()
 
-    -- Kiểm tra lại khoảng cách, nếu chưa đến nơi thì di chuyển lại
-    if (humanoidRootPart.Position - targetPosition).Magnitude > 5 then
-        humanoidRootPart.Position = targetPosition
-    end
-
     -- Xóa BodyVelocity sau khi tween xong
     if bodyVelocity then
         bodyVelocity:Destroy()
