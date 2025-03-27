@@ -65,11 +65,13 @@ function TweenToPosition(targetPosition)
     local tweenTime = magnitude / 300  
 
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { Position = targetPosition })
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
     
     tween:Play()
     tween.Completed:Wait()
     
+    -- Đảm bảo nhân vật không bị mất kiểm soát
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     humanoidRootPart.CFrame = CFrame.new(targetPosition)
     task.wait(0.5) 
     
