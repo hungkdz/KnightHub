@@ -1,4 +1,4 @@
--- 🧮 Khai báo dịch vụ
+-- 🫪 Khai báo dịch vụ
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,7 +23,7 @@ if player.Character then
     onCharacterAdded(player.Character)
 end
 
--- 🔦 Load Fluent UI
+-- 🏦 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 
@@ -45,7 +45,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" })
 }
 
--- 🎛️ Thêm Toggle Auto Quest
+-- 🎮 Thêm Toggle Auto Quest
 local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
@@ -65,7 +65,7 @@ Toggle:OnChanged(function()
     end
 end)
 
--- 🏃‍♂️ Fix rung camera, NoClip và lỗi tốc độ khi di chuyển bằng Tween
+-- 🏃️‍♂️ Fix rung camera, NoClip và lỗi tốc độ khi di chuyển bằng Tween
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid then return end
 
@@ -109,53 +109,21 @@ end
 
 -- 🏆 Nhận nhiệm vụ
 function GetQuest()
-    if not player.Data or not player.Data:FindFirstChild("Level") then return end
-    local level = player.Data.Level.Value  
-    local NameQuest, LevelQ, CFQ
-
-    if level >= 1 and level <= 9 then
-        NameQuest = "BanditQuest1"
-        LevelQ = 1
-        CFQ = CFrame.new(1050, 16, 1540)  
-    elseif level >= 10 and level <= 14 then
-        NameQuest = "JungleQuest"
-        LevelQ = 1
-        CFQ = CFrame.new(-1600, 36, 150)  
-    elseif level >= 15 and level <= 29 then
-        NameQuest = "JungleQuest"
-        LevelQ = 2
-        CFQ = CFrame.new(-1600, 36, 150)  
-    elseif level >= 30 and level <= 39 then
-        NameQuest = "BuggyQuest1"
-        LevelQ = 1
-        CFQ = CFrame.new(-1130, 4, 3820)  
-    elseif level >= 40 and level <= 59 then
-        NameQuest = "BuggyQuest1"
-        LevelQ = 2
-        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
-    else
-        return
-    end
-
-    -- 🔄 Kiểm tra nhiệm vụ trước khi dịch chuyển
-    if not CheckQuestMismatch() then
-        return
-    end
+    if not CheckQuestMismatch() then return end
     
     task.wait(3) -- Đợi trước khi tween
     
+    local questNPCPosition = Vector3.new(1050, 16, 1540) -- Giả định vị trí NPC
     if humanoidRootPart then
-        TweenToPosition(Vector3.new(CFQ.X, CFQ.Y, CFQ.Z))
-    else
-        return
+        TweenToPosition(questNPCPosition)
     end
     
-    local distance = (humanoidRootPart.Position - Vector3.new(CFQ.X, CFQ.Y, CFQ.Z)).Magnitude
+    local distance = (humanoidRootPart.Position - questNPCPosition).Magnitude
     if distance > 5 then
         return
     end
     
     pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", "BanditQuest1", 1)
     end)
 end
