@@ -3,7 +3,6 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService") -- 🆕 Giúp làm mượt Auto Quest
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -47,7 +46,6 @@ _G.AutoQuest = false
 
 -- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
 local LastQuest = nil  
-local AutoQuestConnection -- 🆕 Biến lưu kết nối Auto Quest để tránh giật nhẹ
 
 -- 📌 Kiểm tra nhân vật có nhiệm vụ không
 function HasActiveQuest()
@@ -137,19 +135,13 @@ function GetQuest()
     end
 end
 
--- 🎛️ Kích hoạt Auto Quest KHÔNG GIẬT NHẸ
+-- 🎛️ Kích hoạt Auto Quest
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
-
-    -- Hủy kết nối cũ nếu có
-    if AutoQuestConnection then
-        AutoQuestConnection:Disconnect()
-    end
-
-    -- Nếu bật Auto Quest, chạy vòng lặp mượt hơn
     if _G.AutoQuest then
-        AutoQuestConnection = RunService.RenderStepped:Connect(function()
+        while _G.AutoQuest do
             GetQuest()
-        end)
+            task.wait(2)  
+        end
     end
 end)
