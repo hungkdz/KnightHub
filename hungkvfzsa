@@ -77,13 +77,17 @@ function TweenToPosition(targetPosition)
     bodyVelocity:Destroy()
 end
 
+-- 📌 Hàm kiểm tra nhiệm vụ hiện tại
+function HasActiveQuest()
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    return questFrame and questFrame.Visible
+end
+
 -- 🏆 Nhận nhiệm vụ
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    local hasQuest = questFrame and questFrame.Visible
-    if hasQuest then return end -- Nếu đã có nhiệm vụ, không di chuyển nữa
+    if HasActiveQuest() then return end -- Nếu đã có nhiệm vụ, không di chuyển nữa
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
