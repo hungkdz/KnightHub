@@ -53,7 +53,7 @@ function HasActiveQuest()
     return questFrame and questFrame.Visible
 end
 
--- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity (chỉ khi bật Auto Quest)
+-- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
 
@@ -69,9 +69,8 @@ function TweenToPosition(targetPosition)
         bodyVelocity.Parent = humanoidRootPart
     end
 
-    -- Thiết lập TweenService (Speed = 185, Không Giới Hạn Thời Gian)
-    local tweenTime = distance / 185  -- Tốc độ di chuyển 185
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    -- Thiết lập TweenService (Speed = 185)
+    local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
@@ -83,7 +82,7 @@ function TweenToPosition(targetPosition)
     end
 end
 
--- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
+-- 🏆 Nhận nhiệm vụ (Nhận lại nếu NameQuest thay đổi hoặc không có nhiệm vụ)
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
@@ -115,8 +114,8 @@ function GetQuest()
         return
     end
 
-    -- 📌 Nếu nhiệm vụ thay đổi hoặc chưa có nhiệm vụ, di chuyển đến NPC
-    if LastQuest ~= NameQuest then
+    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
+    if not HasActiveQuest() or LastQuest ~= NameQuest then
         LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
         TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
     end
@@ -141,7 +140,7 @@ Toggle:OnChanged(function()
     if _G.AutoQuest then
         while _G.AutoQuest do
             GetQuest()
-            task.wait(2)  
+            task.wait(0.1)  
         end
     end
 end)
