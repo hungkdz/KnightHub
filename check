@@ -86,40 +86,96 @@ end
 -- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
+    if HasActiveQuest() then return end -- Tránh nhận lại nhiệm vụ khi đang có nhiệm vụ
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ, CFT, Ms
 
-    --CFQ = CframeQuest, CFT = CframeTween, LevelQ = LevelQuest, Ms = Monster
+    -- 📌 Xác định nhiệm vụ theo cấp độ (Thêm CFT)
     if level >= 1 and level <= 9 then
         NameQuest = "BanditQuest1"
-        CFQ = {1058.99231, 16.1369934, 1551.73328, 0.956294656, -0, -0.292404652, 0, 1, -0, 0.292404652, 0, 0.956294656}
+        CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
         LevelQ = 1
-        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        CFT = {
+            CFrame.new(943, 40, 1562),
+            CFrame.new(1115, 40, 1619),
+            CFrame.new(1265.79199, 40, 1592.849)
+        }
         Ms = "Bandit"
+
     elseif level >= 10 and level <= 14 then
         NameQuest = "JungleQuest"
-        CFQ = {-1598.08899, 35.5500031, 153.378006, 0.556530476, 0, 0.830827177, 0, 1, 0, -0.830827177, 0, 0.556530476}
+        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
         LevelQ = 1
-        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        CFT = {
+            CFrame.new(-1673.04834, 30, -73.7299271),
+            CFrame.new(-1570.29041, 30, 339.327484),
+            CFrame.new(-1552.57837, 30, 22.7689781)
+        }
         Ms = "Monkey"
+
     elseif level >= 15 and level <= 29 then
         NameQuest = "JungleQuest"
-        CFQ = {-1598.08899, 35.5500031, 153.378006, 0.556530476, 0, 0.830827177, 0, 1, 0, -0.830827177, 0, 0.556530476}
+        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
         LevelQ = 2
-        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        CFT = {
+            CFrame.new(-1281.31323, 20, -509.142456),
+            CFrame.new(-1216.53259, 20, -586.503235)
+        }
         Ms = "Gorilla"
+
     elseif level >= 30 and level <= 39 then
         NameQuest = "BuggyQuest1"
-        CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
         LevelQ = 1
-        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        CFT = {
+            CFrame.new(-1160.14258, 18, 3929.40723),
+            CFrame.new(-1264.62415, 18, 3903.80957),
+            CFrame.new(-943.844299, 30, 3973.2478)
+        }
         Ms = "Pirate"
+
     elseif level >= 40 and level <= 59 then
         NameQuest = "Brute Quest"
-        CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
         LevelQ = 2
-        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        CFT = {
+            CFrame.new(-1204.29492, 20, 4286.92773),
+            CFrame.new(-962.269287, 20, 4312.79834),
+            CFrame.new(-1333.89319, 20, 4227.29639)
+        }
         Ms = "Brute"
+    else
+        return
+    end
+
+    -- 📌 Nếu nhiệm vụ thay đổi hoặc chưa có nhiệm vụ, di chuyển đến NPC
+    if LastQuest ~= NameQuest then
+        LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
+        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
+    end
+
+    -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+
+    -- 🔄 Nhận nhiệm vụ
+    local success = pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
+
+    -- Nếu nhận thành công, cập nhật LastQuest
+    if success then
+        LastQuest = NameQuest
     end
 end
+
+-- 🎛️ Kích hoạt Auto Quest
+Toggle:OnChanged(function()
+    _G.AutoQuest = Toggle.Value  
+    if _G.AutoQuest then
+        while _G.AutoQuest do
+            GetQuest()
+            task.wait(2)  
+        end
+    end
+end)
