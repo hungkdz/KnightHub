@@ -1,90 +1,125 @@
+-- 🛠 Khai báo dịch vụ
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 
-local questList = {
-    [30] = {
-        NameQuest = "BuggyQuest1",
-        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005),
-        LevelQ = 1,
-        CFT = {
-            CFrame.new(-1160.14258, 18, 3929.40723),
-            CFrame.new(-1264.62415, 18, 3903.80957),
-            CFrame.new(-943.844299, 30, 3973.2478)
-        },
-        Ms = "Pirate"
-    },
-    [40] = {
-        NameQuest = "Brute Quest",
-        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005),
-        LevelQ = 2,
-        CFT = {
-            CFrame.new(-1204.29492, 20, 4286.92773),
-            CFrame.new(-962.269287, 20, 4312.79834),
-            CFrame.new(-1333.89319, 20, 4227.29639)
-        },
-        Ms = "Brute"
-    }
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+local function onCharacterAdded(char)
+    character = char
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoid = character:FindFirstChildOfClass("Humanoid")
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- 🖥 Load Fluent UI
+local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+
+if not Library then
+    warn("Fluent UI không tải được!")
+    return
+end
+
+local Window = Library:CreateWindow({
+    Title = "Knight Hub",
+    SubTitle = "By HungK",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 370),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm" })
 }
 
-local function getNearestCFTPosition(mobPos, cftList)
-    local nearestPos = nil
-    local minDistance = math.huge
-    
-    for _, CFT in ipairs(cftList) do
-        local dist = (Vector3.new(CFT.X, mobPos.Y, CFT.Z) - mobPos).Magnitude
-        if dist < minDistance then
-            minDistance = dist
-            nearestPos = Vector3.new(cft.X, mobPos.Y, cft.Z)
-        end
-    end
-    
-    return nearestPos
+-- 🎛️ Thêm Toggle Auto Quest
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
+_G.AutoQuest = false  
+
+-- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
+local LastQuest = nil  
+
+-- 📌 Kiểm tra nhân vật có nhiệm vụ không
+function HasActiveQuest()
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    return questFrame and questFrame.Visible
 end
 
-local function moveMobToPosition(mob, targetPos)
-    if mob and mob:FindFirstChild("HumanoidRootPart") then
-        local rootPart = mob.HumanoidRootPart
-        local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-        local goal = {Position = targetPos}
-        local tween = TweenService:Create(rootPart, tweenInfo, goal)
-        tween:Play()
-    end
-end
+-- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity (chỉ khi bật Auto Quest)
+function TweenToPosition(targetPosition)
+    if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
 
-local function gatherMobs(mobList, scanPosition, mobName)
-    for _, mob in ipairs(mobList) do
-        if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Name == mobName then
-            local rootPart = mob.HumanoidRootPart
-            local targetPos = Vector3.new(scanPosition.X, rootPart.Position.Y, scanPosition.Z)
-            moveMobToPosition(mob, targetPos)
-        end
-    end
-end
+    local distance = (targetPosition - humanoidRootPart.Position).Magnitude
+    if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
-local function moveCharacterThroughCFT(character, cftList, mobList, mobName, height)
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local rootPart = character.HumanoidRootPart
-        
-        local function tweenToPosition(targetPos)
-            local goal = {Position = Vector3.new(targetPos.X, height, targetPos.Z)}
-            local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-            local tween = TweenService:Create(rootPart, tweenInfo, goal)
-            tween:Play()
-            tween.Completed:Wait()
-        end
-        
-        for _, cft in ipairs(cftList) do
-            tweenToPosition(CFT.Position)
-            gatherMobs(mobList, cft.Position, mobName)
-        end
+    -- Tạo BodyVelocity nếu Auto Quest đang bật
+    local bodyVelocity
+    if _G.AutoQuest then
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
+        bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bodyVelocity.Parent = humanoidRootPart
+    end
+
+    -- Thiết lập TweenService (Speed = 185, Không Giới Hạn Thời Gian)
+    local tweenTime = distance / 185  -- Tốc độ di chuyển 185
+    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
+
+    tween:Play()
+    tween.Completed:Wait()
+
+    -- Xóa BodyVelocity sau khi tween xong
+    if bodyVelocity then
+        bodyVelocity:Destroy()
     end
 end
 
-local function getQuestInfo(lv)
-    for level, quest in pairs(questList) do
-        if lv >= level and lv < level + 10 then
-            return quest
-        end
+-- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
+function GetQuest()
+    if not player.Data or not player.Data:FindFirstChild("Level") then return end
+
+    local level = player.Data.Level.Value  
+    local NameQuest, LevelQ, CFQ, CFT, Ms
+
+    --CFQ = CframeQuest, CFT = CframeTween, LevelQ = LevelQuest, Ms = Monster
+    if level >= 1 and level <= 9 then
+        NameQuest = "BanditQuest1"
+        CFQ = {1058.99231, 16.1369934, 1551.73328, 0.956294656, -0, -0.292404652, 0, 1, -0, 0.292404652, 0, 0.956294656}
+        LevelQ = 1
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        Ms = "Bandit"
+    elseif level >= 10 and level <= 14 then
+        NameQuest = "JungleQuest"
+        CFQ = {-1598.08899, 35.5500031, 153.378006, 0.556530476, 0, 0.830827177, 0, 1, 0, -0.830827177, 0, 0.556530476}
+        LevelQ = 1
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        Ms = "Monkey"
+    elseif level >= 15 and level <= 29 then
+        NameQuest = "JungleQuest"
+        CFQ = {-1598.08899, 35.5500031, 153.378006, 0.556530476, 0, 0.830827177, 0, 1, 0, -0.830827177, 0, 0.556530476}
+        LevelQ = 2
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        Ms = "Gorilla"
+    elseif level >= 30 and level <= 39 then
+        NameQuest = "BuggyQuest1"
+        CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
+        LevelQ = 1
+        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        Ms = "Pirate"
+    elseif level >= 40 and level <= 59 then
+        NameQuest = "Brute Quest"
+        CFQ = {-1141.07495, 4.1000061, 3831.55005, -0.999999285, 0, -0.00118885795, 0, 1, 0, 0.00118885795, -0, -0.999999285}
+        LevelQ = 2
+        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        Ms = "Brute"
     end
-    return nil
 end
