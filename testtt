@@ -88,41 +88,37 @@ function GetQuest()
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
+
     -- 📌 Xác định nhiệm vụ theo cấp độ
-        --CFQ = CframeQuest, CFT = CframeTween, LevelQ = LevelQuest, Ms = Monster
-        if lv == 1 and lv <= 9 then
+    if level >= 1 and level <= 9 then
         NameQuest = "BanditQuest1"
-        CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
         LevelQ = 1
         CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        CFQ = CFrame.new(1050, 16, 1540)  
         Ms = "Bandit"
-
-        elseif lv == 10 and lv <= 14 then
+    elseif level >= 10 and level <= 14 then
         NameQuest = "JungleQuest"
-        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
         LevelQ = 1
         CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        CFQ = CFrame.new(-1600, 36, 150)  
         Ms = "Monkey"
-        
-        elseif lv == 15 and lv <= 29  then
+    elseif level >= 15 and level <= 29 then
         NameQuest = "JungleQuest"
-        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
         LevelQ = 2
         CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        CFQ = CFrame.new(-1600, 36, 150)  
         Ms = "Gorilla"
-
-        elseif lv == 30 and lv <= 39 then
+    elseif level >= 30 and level <= 39 then
         NameQuest = "BuggyQuest1"
-        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
         LevelQ = 1
         CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        CFQ = CFrame.new(-1130, 4, 3820)  
         Ms = "Pirate"
-
-        elseif lv == 40 and lv <= 59 then
-        NameQuest = "Brute Quest"
-        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
+    elseif level >= 40 and level <= 59 then
+        NameQuest = "BuggyQuest1"
         LevelQ = 2
         CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
         Ms = "Brute"
     else
         return
