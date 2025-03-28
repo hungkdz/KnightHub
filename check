@@ -7,9 +7,9 @@ local RootPart = Character:WaitForChild("HumanoidRootPart")
 
 local gatherRange = 125  -- Phạm vi quét quái
 local safeHeight = 50  -- Độ cao nhân vật đứng khi farm
-local moveTime = 1.5  -- Thời gian di chuyển giữa các điểm
 local gatherTime = 1  -- Thời gian gom quái
 local farmTime = 3  -- Thời gian farm trước khi chuyển điểm
+local moveSpeed = 215  -- Tốc độ tween
 
 -- Danh sách vị trí cố định gom quái
 local CFT = {
@@ -52,6 +52,9 @@ end
 local function MoveToPosition(targetCFrame)
     if RootPart then
         local targetPosition = targetCFrame.Position + Vector3.new(0, safeHeight, 0)
+        local distance = (RootPart.Position - targetPosition).Magnitude
+        local moveTime = distance / moveSpeed  -- Tính thời gian di chuyển theo tốc độ
+
         local tween = TweenService:Create(RootPart, TweenInfo.new(moveTime), {CFrame = CFrame.new(targetPosition)})
         tween:Play()
         task.wait(moveTime + 0.5)  -- Chờ tween hoàn tất
