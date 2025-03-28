@@ -40,8 +40,8 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" })
 }
 
--- 🎛️ Toggle Auto Quest
-local Toggle = Tabs.Main:AddToggle("AutoQuestToggle", { Title = "Auto Quest", Default = false })
+-- 🎛️ Thêm Toggle Auto Quest
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
 -- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
@@ -61,57 +61,93 @@ function TweenToPosition(targetPosition)
     if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
     -- Tạo BodyVelocity nếu Auto Quest đang bật
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
-    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-    bodyVelocity.Parent = humanoidRootPart
+    local bodyVelocity
+    if _G.AutoQuest then
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
+        bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bodyVelocity.Parent = humanoidRootPart
+    end
 
-    -- Thiết lập TweenService
-    local tweenTime = distance / 185  -- Điều chỉnh tốc độ xuống 185
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    -- Thiết lập TweenService (Speed = 185)
+    local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
     tween.Completed:Wait()
 
     -- Xóa BodyVelocity sau khi tween xong
-    bodyVelocity:Destroy()
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+    end
 end
 
--- 🏆 Nhận nhiệm vụ (Nhận lại khi không có nhiệm vụ hoặc NameQuest thay đổi)
+local Sea1, Sea2, Sea3 = false, false, false
+
+-- Kiểm tra PlaceId và gán giá trị cho các biến tương ứng
+local placeId = game.PlaceId
+if placeId == 2753915549 then
+    Sea1 = true
+    print("Sea 1")
+elseif placeId == 4442272183 then
+    Sea2 = true
+    print("Sea 2")
+elseif placeId == 7449423635 then
+    Sea3 = true
+    print("Sea 3")
+else
+    game:Shutdown()  -- Tắt game nếu PlaceId không khớp với bất kỳ trường hợp nào
+end
+
+-- 🏆 Nhận nhiệm vụ (Nhận lại nếu NameQuest thay đổi hoặc không có nhiệm vụ)
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
-    if not _G.AutoQuest then return end  -- Chỉ chạy khi bật toggle
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
 
     -- 📌 Xác định nhiệm vụ theo cấp độ
-    if level >= 1 and level <= 9 then
+    if Sea1 then
+        --CFQ = CframeQuest, CFT = CframeTween, LevelQ = LevelQuest, Ms = Monster
+        if lv == 1 and lv <= 9 then
         NameQuest = "BanditQuest1"
+        CFQ = CFrame.new(1058.99231, 16.1369934, 1551.73328)
         LevelQ = 1
-        CFQ = CFrame.new(1050, 16, 1540)  
-    elseif level >= 10 and level <= 14 then
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        Ms = "Bandit"
+
+        elseif lv == 10 and lv <= 14 then
         NameQuest = "JungleQuest"
+        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
         LevelQ = 1
-        CFQ = CFrame.new(-1600, 36, 150)  
-    elseif level >= 15 and level <= 29 then
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        Ms = "Monkey"
+        
+        elseif lv == 15 and lv <= 29  then
         NameQuest = "JungleQuest"
+        CFQ = CFrame.new(-1598.08899, 35.5500031, 153.378006)
         LevelQ = 2
-        CFQ = CFrame.new(-1600, 36, 150)  
-    elseif level >= 30 and level <= 39 then
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        Ms = "Gorilla"
+
+        elseif lv == 30 and lv <= 39 then
         NameQuest = "BuggyQuest1"
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
         LevelQ = 1
-        CFQ = CFrame.new(-1130, 4, 3820)  
-    elseif level >= 40 and level <= 59 then
-        NameQuest = "BuggyQuest1"
+        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        Ms = "Pirate"
+
+        elseif lv == 40 and lv <= 59 then
+        NameQuest = "Brute Quest"
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005)
         LevelQ = 2
-        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
+        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        Ms = "Brute"
     else
         return
     end
 
-    -- 📌 Nếu không có nhiệm vụ hoặc NameQuest thay đổi, di chuyển đến NPC
+    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
     if not HasActiveQuest() or LastQuest ~= NameQuest then
         LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
         TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
@@ -134,8 +170,10 @@ end
 -- 🎛️ Kích hoạt Auto Quest
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
-    while _G.AutoQuest do
-        GetQuest()
-        task.wait(1.5)  -- Giảm độ trễ để mượt hơn
+    if _G.AutoQuest then
+        while _G.AutoQuest do
+            GetQuest()
+            task.wait(0.1)  
+        end
     end
 end)
