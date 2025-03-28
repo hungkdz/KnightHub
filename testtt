@@ -82,32 +82,13 @@ function TweenToPosition(targetPosition)
     end
 end
 
-local Sea1, Sea2, Sea3 = false, false, false
-
--- Kiểm tra PlaceId và gán giá trị cho các biến tương ứng
-local placeId = game.PlaceId
-if placeId == 2753915549 then
-    Sea1 = true
-    print("Sea 1")
-elseif placeId == 4442272183 then
-    Sea2 = true
-    print("Sea 2")
-elseif placeId == 7449423635 then
-    Sea3 = true
-    print("Sea 3")
-else
-    game:Shutdown()  -- Tắt game nếu PlaceId không khớp với bất kỳ trường hợp nào
-end
-
 -- 🏆 Nhận nhiệm vụ (Nhận lại nếu NameQuest thay đổi hoặc không có nhiệm vụ)
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
-
     -- 📌 Xác định nhiệm vụ theo cấp độ
-    if Sea1 then
         --CFQ = CframeQuest, CFT = CframeTween, LevelQ = LevelQuest, Ms = Monster
         if lv == 1 and lv <= 9 then
         NameQuest = "BanditQuest1"
