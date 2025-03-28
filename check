@@ -1,134 +1,90 @@
 local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Player = Players.LocalPlayer
-local Character = Player.Character or Player.CharacterAdded:Wait()
-local RootPart = Character:WaitForChild("HumanoidRootPart")
 
-local gatherRange = 125  -- Phạm vi quét quái
-local safeHeight = 50  -- Độ cao nhân vật đứng khi farm
-local gatherTime = 1  -- Thời gian gom quái
-local farmTime = 3  -- Thời gian farm trước khi chuyển điểm
-local moveSpeed = 215  -- Tốc độ tween
-
--- Danh sách vị trí cố định gom quái
-local CFT = {
-    CFrame.new(-1204.29492, 20, 4286.92773),
-    CFrame.new(-962.269287, 20, 4312.79834),
-    CFrame.new(-1333.89319, 20, 4227.29639)
+local questList = {
+    [30] = {
+        NameQuest = "BuggyQuest1",
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005),
+        LevelQ = 1,
+        CFT = {
+            CFrame.new(-1160.14258, 18, 3929.40723),
+            CFrame.new(-1264.62415, 18, 3903.80957),
+            CFrame.new(-943.844299, 30, 3973.2478)
+        },
+        Ms = "Pirate"
+    },
+    [40] = {
+        NameQuest = "Brute Quest",
+        CFQ = CFrame.new(-1141.07495, 4.1000061, 3831.55005),
+        LevelQ = 2,
+        CFT = {
+            CFrame.new(-1204.29492, 20, 4286.92773),
+            CFrame.new(-962.269287, 20, 4312.79834),
+            CFrame.new(-1333.89319, 20, 4227.29639)
+        },
+        Ms = "Brute"
+    }
 }
 
--- Hàm tìm vị trí gần nhất để gom quái
-local function GetNearestGatherPoint(position)
-    local nearestPoint = nil
+local function getNearestCFTPosition(mobPos, cftList)
+    local nearestPos = nil
     local minDistance = math.huge
-
-    for _, point in ipairs(CFT) do
-        local distance = (position - point.Position).Magnitude
-        if distance < minDistance then
-            minDistance = distance
-            nearestPoint = point
+    
+    for _, CFT in ipairs(cftList) do
+        local dist = (Vector3.new(CFT.X, mobPos.Y, CFT.Z) - mobPos).Magnitude
+        if dist < minDistance then
+            minDistance = dist
+            nearestPos = Vector3.new(cft.X, mobPos.Y, cft.Z)
         end
     end
-
-    return nearestPoint
+    
+    return nearestPos
 end
 
--- Hàm lấy danh sách quái trong phạm vi nhất định
-local function GetEnemiesInRange(position, range)
-    local enemies = {}
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChildOfClass("Humanoid") then
-            local enemyPos = obj.HumanoidRootPart.Position
-            if (enemyPos - position).Magnitude <= range then
-                table.insert(enemies, obj)
-            end
-        end
-    end
-    return enemies
-end
-
--- Hàm di chuyển nhân vật đến vị trí farm (trên không)
-local function MoveToPosition(targetCFrame)
-    if RootPart then
-        local targetPosition = targetCFrame.Position + Vector3.new(0, safeHeight, 0)
-        local distance = (RootPart.Position - targetPosition).Magnitude
-        local moveTime = distance / moveSpeed  -- Tính thời gian di chuyển theo tốc độ
-
-        local tween = TweenService:Create(RootPart, TweenInfo.new(moveTime), {CFrame = CFrame.new(targetPosition)})
+local function moveMobToPosition(mob, targetPos)
+    if mob and mob:FindFirstChild("HumanoidRootPart") then
+        local rootPart = mob.HumanoidRootPart
+        local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+        local goal = {Position = targetPos}
+        local tween = TweenService:Create(rootPart, tweenInfo, goal)
         tween:Play()
-        task.wait(moveTime + 0.5)  -- Chờ tween hoàn tất
     end
 end
 
--- Hàm attack quái
-local function AttackEnemies(enemies)
-    for _, enemy in pairs(enemies) do
-        if enemy and enemy:FindFirstChild("Humanoid") then
-            enemy.Humanoid:TakeDamage(10)  -- Gây sát thương cho quái
+local function gatherMobs(mobList, scanPosition, mobName)
+    for _, mob in ipairs(mobList) do
+        if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Name == mobName then
+            local rootPart = mob.HumanoidRootPart
+            local targetPos = Vector3.new(scanPosition.X, rootPart.Position.Y, scanPosition.Z)
+            moveMobToPosition(mob, targetPos)
         end
     end
 end
 
--- Hàm gom quái vào vị trí gần nhất và cố định chúng
-local function GatherMobs(position)
-    local enemies = GetEnemiesInRange(position, gatherRange)
-    if #enemies == 0 then return nil end
-
-    local gatherPoint = GetNearestGatherPoint(position)
-    if not gatherPoint then return nil end
-
-    -- Gom quái vào vị trí gần nhất
-    for _, enemy in pairs(enemies) do
-        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            local enemyRoot = enemy.HumanoidRootPart
-            local targetCFrame = CFrame.new(gatherPoint.Position.X, enemyRoot.Position.Y, gatherPoint.Position.Z)
-
-            local tween = TweenService:Create(enemyRoot, TweenInfo.new(gatherTime), {CFrame = targetCFrame})
+local function moveCharacterThroughCFT(character, cftList, mobList, mobName, height)
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local rootPart = character.HumanoidRootPart
+        
+        local function tweenToPosition(targetPos)
+            local goal = {Position = Vector3.new(targetPos.X, height, targetPos.Z)}
+            local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+            local tween = TweenService:Create(rootPart, tweenInfo, goal)
             tween:Play()
+            tween.Completed:Wait()
         end
-    end
-
-    task.wait(gatherTime)  -- Chờ quái gom lại
-
-    -- Thả rơi quái để cố định vị trí
-    for _, enemy in pairs(enemies) do
-        if enemy and enemy:FindFirstChild("HumanoidRootPart") then
-            local enemyRoot = enemy.HumanoidRootPart
-            enemyRoot.Position = Vector3.new(enemyRoot.Position.X, enemyRoot.Position.Y - 3, enemyRoot.Position.Z)
-        end
-    end
-
-    return enemies
-end
-
--- Hàm kiểm tra quái còn sống không
-local function AreEnemiesAlive(enemies)
-    for _, enemy in pairs(enemies) do
-        if enemy and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-            return true
-        end
-    end
-    return false
-end
-
--- Vòng lặp di chuyển giữa các điểm farm và attack quái
-local function StartFarming()
-    while true do
-        for _, farmPosition in pairs(CFT) do
-            MoveToPosition(farmPosition)  -- Di chuyển nhân vật lên vị trí trên không
-            local enemies = GatherMobs(farmPosition)  -- Gom quái vào vị trí gần nhất trong danh sách
-            
-            if enemies then
-                while AreEnemiesAlive(enemies) do
-                    AttackEnemies(enemies)  -- Tấn công quái
-                    task.wait(1)  -- Đợi 1 giây rồi tiếp tục tấn công
-                end
-            end
-
-            task.wait(farmTime)  -- Đợi farm xong rồi mới chuyển vị trí tiếp theo
+        
+        for _, cft in ipairs(cftList) do
+            tweenToPosition(CFT.Position)
+            gatherMobs(mobList, cft.Position, mobName)
         end
     end
 end
 
-StartFarming()
+local function getQuestInfo(lv)
+    for level, quest in pairs(questList) do
+        if lv >= level and lv < level + 10 then
+            return quest
+        end
+    end
+    return nil
+end
