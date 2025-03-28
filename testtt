@@ -3,7 +3,6 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService") -- 🆕 Giúp làm mượt Auto Quest
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -47,8 +46,6 @@ _G.AutoQuest = false
 
 -- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
 local LastQuest = nil  
-local IsTweening = false -- 🆕 Tránh gọi Tween liên tục khi đang di chuyển
-local AutoQuestConnection -- 🆕 Biến lưu kết nối Auto Quest để tránh giật nhẹ
 
 -- 📌 Kiểm tra nhân vật có nhiệm vụ không
 function HasActiveQuest()
@@ -56,16 +53,12 @@ function HasActiveQuest()
     return questFrame and questFrame.Visible
 end
 
--- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity (chỉ khi bật Auto Quest)
+-- 🏃‍♂️ Tween đến vị trí với tốc độ ổn định (chỉ khi bật Auto Quest)
 function TweenToPosition(targetPosition)
-    if not humanoidRootPart or not humanoid or not _G.AutoQuest or IsTweening then return end
-    IsTweening = true -- Đánh dấu đang tween
+    if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
 
     local distance = (targetPosition - humanoidRootPart.Position).Magnitude
-    if distance < 5 then
-        IsTweening = false
-        return
-    end  -- Tránh tween khi đã gần vị trí
+    if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
     -- Tạo BodyVelocity nếu Auto Quest đang bật
     local bodyVelocity
@@ -76,8 +69,8 @@ function TweenToPosition(targetPosition)
         bodyVelocity.Parent = humanoidRootPart
     end
 
-    -- Thiết lập TweenService (Speed = 185, Không Giới Hạn Thời Gian)
-    local tweenTime = distance / 185  -- Tốc độ di chuyển 185
+    -- Thiết lập TweenService với tốc độ 185
+    local tweenTime = distance / 185  -- Không giới hạn thời gian tween
     local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
@@ -88,11 +81,10 @@ function TweenToPosition(targetPosition)
     if bodyVelocity then
         bodyVelocity:Destroy()
     end
-    IsTweening = false -- Bỏ đánh dấu đang tween
 end
 
--- 🏆 Nhận nhiệm vụ (Chỉ nhận lại khi có nhiệm vụ mới)
-function GetQuest()
+-- 🏆 Di chuyển đến NPC và nhận nhiệm vụ
+function MoveAndAcceptQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
     local level = player.Data.Level.Value  
@@ -123,14 +115,16 @@ function GetQuest()
         return
     end
 
-    -- 📌 Nếu nhiệm vụ thay đổi hoặc chưa có nhiệm vụ, di chuyển đến NPC
-    if LastQuest ~= NameQuest then
+    -- 📌 Nếu không có nhiệm vụ hoặc nhiệm vụ thay đổi, di chuyển ngay đến NPC
+    if not HasActiveQuest() or LastQuest ~= NameQuest then
         LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
-        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
+        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC trước
     end
 
-    -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+    -- 🏁 Đợi đến khi nhân vật đã đến vị trí NPC
+    while (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 do
+        task.wait(0.2)  -- Giảm giật bằng cách kiểm tra liên tục
+    end
 
     -- 🔄 Nhận nhiệm vụ
     local success = pcall(function()
@@ -143,21 +137,13 @@ function GetQuest()
     end
 end
 
--- 🎛️ Kích hoạt Auto Quest KHÔNG GIẬT NHẸ
+-- 🎛️ Kích hoạt Auto Quest
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
-
-    -- Hủy kết nối cũ nếu có
-    if AutoQuestConnection then
-        AutoQuestConnection:Disconnect()
-    end
-
-    -- Nếu bật Auto Quest, chạy vòng lặp mượt hơn
     if _G.AutoQuest then
-        AutoQuestConnection = RunService.Heartbeat:Connect(function()
-            if not IsTweening then -- 🆕 Kiểm tra nếu đang tween thì không kiểm tra nhiệm vụ
-                GetQuest()
-            end
-        end)
+        while _G.AutoQuest do
+            MoveAndAcceptQuest()
+            task.wait(1.5)  -- Giữ khoảng thời gian phù hợp để hạn chế rung giật
+        end
     end
 end)
