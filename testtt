@@ -40,8 +40,8 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" })
 }
 
--- 🎛️ Thêm Toggle Auto Quest
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
+-- 🎛️ Toggle Auto Quest
+local Toggle = Tabs.Main:AddToggle("AutoQuestToggle", { Title = "Auto Quest", Default = false })
 _G.AutoQuest = false  
 
 -- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
@@ -61,30 +61,27 @@ function TweenToPosition(targetPosition)
     if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
 
     -- Tạo BodyVelocity nếu Auto Quest đang bật
-    local bodyVelocity
-    if _G.AutoQuest then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
-        bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        bodyVelocity.Parent = humanoidRootPart
-    end
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
+    bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bodyVelocity.Parent = humanoidRootPart
 
-    -- Thiết lập TweenService (Speed = 185)
-    local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    -- Thiết lập TweenService
+    local tweenTime = distance / 185  -- Điều chỉnh tốc độ xuống 185
+    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
     tween.Completed:Wait()
 
     -- Xóa BodyVelocity sau khi tween xong
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-    end
+    bodyVelocity:Destroy()
 end
 
--- 🏆 Nhận nhiệm vụ (Nhận lại nếu NameQuest thay đổi hoặc không có nhiệm vụ)
+-- 🏆 Nhận nhiệm vụ (Nhận lại khi không có nhiệm vụ hoặc NameQuest thay đổi)
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
+    if not _G.AutoQuest then return end  -- Chỉ chạy khi bật toggle
 
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFQ
@@ -114,7 +111,7 @@ function GetQuest()
         return
     end
 
-    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
+    -- 📌 Nếu không có nhiệm vụ hoặc NameQuest thay đổi, di chuyển đến NPC
     if not HasActiveQuest() or LastQuest ~= NameQuest then
         LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
         TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
@@ -137,10 +134,8 @@ end
 -- 🎛️ Kích hoạt Auto Quest
 Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
-    if _G.AutoQuest then
-        while _G.AutoQuest do
-            GetQuest()
-            task.wait(0.1)  
-        end
+    while _G.AutoQuest do
+        GetQuest()
+        task.wait(1.5)  -- Giảm độ trễ để mượt hơn
     end
 end)
