@@ -1,156 +1,70 @@
--- 🛠 Khai báo dịch vụ
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:FindFirstChildOfClass("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
 
-local function onCharacterAdded(char)
-    character = char
-    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoid = character:FindFirstChildOfClass("Humanoid")
-end
-
-player.CharacterAdded:Connect(onCharacterAdded)
-
--- 🖥 Load Fluent UI
-local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-
-if not Library then
-    warn("Fluent UI không tải được!")
-    return
-end
-
-local Window = Library:CreateWindow({
-    Title = "Knight Hub",
-    SubTitle = "By HungK",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(480, 370),
-    Acrylic = true,
-    Theme = "Dark"
-})
-
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main Farm" })
+local CFT_Positions = { -- Danh sách vị trí gom quái
+    Vector3.new(100, 10, 200),
+    Vector3.new(300, 10, 400),
+    Vector3.new(500, 10, 600),
 }
 
--- 🎛️ Thêm Toggle Auto Quest
-local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Auto Quest", Default = false })
-_G.AutoQuest = false  
+function GetNearestCFTPosition(position)
+    local nearestPos = nil
+    local nearestDist = math.huge
 
--- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
-local LastQuest = nil  
-
--- 📌 Kiểm tra nhân vật có nhiệm vụ không
-function HasActiveQuest()
-    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
-    return questFrame and questFrame.Visible
-end
-
--- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity
-function TweenToPosition(targetPosition)
-    if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
-
-    local distance = (targetPosition - humanoidRootPart.Position).Magnitude
-    if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
-
-    -- Tạo BodyVelocity nếu Auto Quest đang bật
-    local bodyVelocity
-    if _G.AutoQuest then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nhân vật ổn định
-        bodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        bodyVelocity.Parent = humanoidRootPart
+    for _, cftPos in ipairs(CFT_Positions) do
+        local dist = (Vector3.new(cftPos.X, position.Y, cftPos.Z) - position).Magnitude
+        if dist < nearestDist then
+            nearestDist = dist
+            nearestPos = cftPos
+        end
     end
 
-    -- Thiết lập TweenService (Speed = 185)
-    local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
+    return nearestPos
+end
 
+function GatherEnemies()
+    local enemies = {}
+    for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+        if enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
+            local distance = (enemy.HumanoidRootPart.Position - rootPart.Position).Magnitude
+            if distance <= 125 then
+                table.insert(enemies, enemy)
+            end
+        end
+    end
+
+    if #enemies == 0 then return end
+
+    local gatherPoint = GetNearestCFTPosition(rootPart.Position)
+    if not gatherPoint then return end
+
+    -- Tween nhân vật lên trên điểm gom quái
+    local targetPos = gatherPoint + Vector3.new(0, 50, 0)
+    local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(rootPart, tweenInfo, {Position = targetPos})
     tween:Play()
     tween.Completed:Wait()
 
-    -- Xóa BodyVelocity sau khi tween xong
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-    end
-end
-
--- 🏆 Nhận nhiệm vụ (Nhận lại nếu NameQuest thay đổi hoặc không có nhiệm vụ)
-function GetQuest()
-    if not player.Data or not player.Data:FindFirstChild("Level") then return end
-
-    local level = player.Data.Level.Value  
-    local NameQuest, LevelQ, CFQ
-
-    -- 📌 Xác định nhiệm vụ theo cấp độ
-    if level >= 1 and level <= 9 then
-        NameQuest = "BanditQuest1"
-        LevelQ = 1
-        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
-        CFQ = CFrame.new(1050, 16, 1540)  
-        Ms = "Bandit"
-    elseif level >= 10 and level <= 14 then
-        NameQuest = "JungleQuest"
-        LevelQ = 1
-        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
-        CFQ = CFrame.new(-1600, 36, 150)  
-        Ms = "Monkey"
-    elseif level >= 15 and level <= 29 then
-        NameQuest = "JungleQuest"
-        LevelQ = 2
-        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
-        CFQ = CFrame.new(-1600, 36, 150)  
-        Ms = "Gorilla"
-    elseif level >= 30 and level <= 39 then
-        NameQuest = "BuggyQuest1"
-        LevelQ = 1
-        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
-        CFQ = CFrame.new(-1130, 4, 3820)  
-        Ms = "Pirate"
-    elseif level >= 40 and level <= 59 then
-        NameQuest = "BuggyQuest1"
-        LevelQ = 2
-        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
-        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
-        Ms = "Brute"
-    else
-        return
-    end
-
-    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
-    if not HasActiveQuest() or LastQuest ~= NameQuest then
-        LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
-        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
-    end
-
-    -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
-    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
-
-    -- 🔄 Nhận nhiệm vụ
-    local success = pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-
-    -- Nếu nhận thành công, cập nhật LastQuest
-    if success then
-        LastQuest = NameQuest
-    end
-end
-
--- 🎛️ Kích hoạt Auto Quest
-Toggle:OnChanged(function()
-    _G.AutoQuest = Toggle.Value  
-    if _G.AutoQuest then
-        while _G.AutoQuest do
-            GetQuest()
-            task.wait(0.1)  
+    -- Gom quái vào điểm đã chọn
+    for _, enemy in pairs(enemies) do
+        if enemy:FindFirstChild("HumanoidRootPart") then
+            local enemyPos = Vector3.new(gatherPoint.X, enemy.HumanoidRootPart.Position.Y, gatherPoint.Z)
+            local enemyTween = TweenService:Create(enemy.HumanoidRootPart, tweenInfo, {Position = enemyPos})
+            enemyTween:Play()
         end
     end
-end)
+
+    task.wait(1) -- Chờ quái di chuyển xong
+
+    -- Cố định quái tại vị trí gom
+    for _, enemy in pairs(enemies) do
+        if enemy:FindFirstChild("HumanoidRootPart") then
+            enemy.HumanoidRootPart.Anchored = true
+        end
+    end
+end
