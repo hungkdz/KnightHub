@@ -53,7 +53,7 @@ function HasActiveQuest()
     return questFrame and questFrame.Visible
 end
 
--- 🏃‍♂️ Tween đến vị trí với tốc độ ổn định (chỉ khi bật Auto Quest)
+-- 🏃‍♂️ Tween đến vị trí mượt hơn với BodyVelocity
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid or not _G.AutoQuest then return end
 
@@ -69,9 +69,8 @@ function TweenToPosition(targetPosition)
         bodyVelocity.Parent = humanoidRootPart
     end
 
-    -- Thiết lập TweenService với tốc độ 185
-    local tweenTime = distance / 185  -- Không giới hạn thời gian tween
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    -- Thiết lập TweenService (Speed = 185)
+    local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
 
     tween:Play()
@@ -83,8 +82,8 @@ function TweenToPosition(targetPosition)
     end
 end
 
--- 🏆 Di chuyển đến NPC và nhận nhiệm vụ
-function MoveAndAcceptQuest()
+-- 🏆 Nhận nhiệm vụ (Nhận lại nếu NameQuest thay đổi hoặc không có nhiệm vụ)
+function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
     local level = player.Data.Level.Value  
@@ -115,16 +114,14 @@ function MoveAndAcceptQuest()
         return
     end
 
-    -- 📌 Nếu không có nhiệm vụ hoặc nhiệm vụ thay đổi, di chuyển ngay đến NPC
+    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
     if not HasActiveQuest() or LastQuest ~= NameQuest then
         LastQuest = NameQuest  -- Cập nhật nhiệm vụ mới
-        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC trước
+        TweenToPosition(CFQ.Position)  -- Di chuyển đến NPC
     end
 
-    -- 🏁 Đợi đến khi nhân vật đã đến vị trí NPC
-    while (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 do
-        task.wait(0.2)  -- Giảm giật bằng cách kiểm tra liên tục
-    end
+    -- 🏁 Kiểm tra nếu đã đến vị trí NPC trước khi nhận nhiệm vụ
+    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
 
     -- 🔄 Nhận nhiệm vụ
     local success = pcall(function()
@@ -142,8 +139,8 @@ Toggle:OnChanged(function()
     _G.AutoQuest = Toggle.Value  
     if _G.AutoQuest then
         while _G.AutoQuest do
-            MoveAndAcceptQuest()
-            task.wait(1.5)  -- Giữ khoảng thời gian phù hợp để hạn chế rung giật
+            GetQuest()
+            task.wait(0.1)  
         end
     end
 end)
