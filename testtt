@@ -46,64 +46,25 @@ local function OnCharacterAdded(character)
     function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
+            local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y + 10, targetPosition.Z)
             local tween = TweenService:Create(
                 humanoidRootPart,
                 TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                {CFrame = CFrame.new(targetPosition)}
+                {CFrame = targetCFrame}
             )
             tween:Play()
             tween.Completed:Wait()
         end
     end
 
-    function GomQuai(character)
-        if not NameQuest then return end
-
+    function MoveThroughPoints(character)
         for _, targetPosition in ipairs(CFT) do
-            -- Tween nhân vật đến vị trí CFT
             TweenToPosition(character, targetPosition.Position)
-            
-            local enemies = {} -- Danh sách quái cần gom
-            
-            -- Tìm tất cả quái có tên phù hợp trong phạm vi 125
-            for _, enemy in pairs(workspace:GetChildren()) do
-                if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy.Name == Ms then
-                    local distance = (enemy.HumanoidRootPart.Position - targetPosition.Position).magnitude
-                    if distance <= 125 then
-                        table.insert(enemies, enemy)
-                    end
-                end
-            end
-            
-            -- Di chuyển từng quái đến vị trí gom
-            for _, enemy in pairs(enemies) do
-                local rootPart = enemy:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    local targetCFrame = CFrame.new(targetPosition.Position.X, rootPart.Position.Y, targetPosition.Position.Z) -- Giữ nguyên Y
-                    
-                    local tween = TweenService:Create(
-                        rootPart,
-                        TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                        {CFrame = targetCFrame}
-                    )
-                    
-                    tween:Play()
-                end
-            end
-            
-            -- Chờ quái trong phạm vi chết hết trước khi tiếp tục
-            while #enemies > 0 do
-                task.wait(1)
-                for i = #enemies, 1, -1 do
-                    if not enemies[i] or not enemies[i]:FindFirstChild("Humanoid") or enemies[i].Humanoid.Health <= 0 then
-                        table.remove(enemies, i)
-                    end
-                end
-            end
+            task.wait(1.5) -- Dừng 1.5s trước khi đến điểm tiếp theo
         end
     end
 
-    GomQuai(character)
+    MoveThroughPoints(character)
 end
 
 player.CharacterAdded:Connect(OnCharacterAdded)
