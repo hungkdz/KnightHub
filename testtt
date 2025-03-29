@@ -1,97 +1,109 @@
 local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
 
-local level = player.Data.Level.Value  
-local NameQuest, LevelQ, CFT, CFQ, Ms
-
--- 📌 Xác định nhiệm vụ theo cấp độ
-if level >= 1 and level <= 9 then
-    NameQuest = "BanditQuest1"
-    LevelQ = 1
-    CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
-    CFQ = CFrame.new(1050, 16, 1540)  
-    Ms = "Bandit"
-elseif level >= 10 and level <= 14 then
-    NameQuest = "JungleQuest"
-    LevelQ = 1
-    CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
-    CFQ = CFrame.new(-1600, 36, 150)  
-    Ms = "Monkey"
-elseif level >= 15 and level <= 29 then
-    NameQuest = "JungleQuest"
-    LevelQ = 2
-    CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
-    CFQ = CFrame.new(-1600, 36, 150)  
-    Ms = "Gorilla"
-elseif level >= 30 and level <= 39 then
-    NameQuest = "BuggyQuest1"
-    LevelQ = 1
-    CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
-    CFQ = CFrame.new(-1130, 4, 3820)  
-    Ms = "Pirate"
-elseif level >= 40 and level <= 59 then
-    NameQuest = "BuggyQuest1"
-    LevelQ = 2
-    CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
-    CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
-    Ms = "Brute"
+local function GetCharacter()
+    return player.Character or player.CharacterAdded:Wait()
 end
 
-function TweenToPosition(character, targetPosition)
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if humanoidRootPart then
-        local tween = TweenService:Create(
-            humanoidRootPart,
-            TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-            {CFrame = CFrame.new(targetPosition)}
-        )
-        tween:Play()
-        tween.Completed:Wait()
+local function OnCharacterAdded(character)
+    local level = player.Data.Level.Value  
+    local NameQuest, LevelQ, CFT, CFQ, Ms
+
+    -- 📌 Xác định nhiệm vụ theo cấp độ
+    if level >= 1 and level <= 9 then
+        NameQuest = "BanditQuest1"
+        LevelQ = 1
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        CFQ = CFrame.new(1050, 16, 1540)  
+        Ms = "Bandit"
+    elseif level >= 10 and level <= 14 then
+        NameQuest = "JungleQuest"
+        LevelQ = 1
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        CFQ = CFrame.new(-1600, 36, 150)  
+        Ms = "Monkey"
+    elseif level >= 15 and level <= 29 then
+        NameQuest = "JungleQuest"
+        LevelQ = 2
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        CFQ = CFrame.new(-1600, 36, 150)  
+        Ms = "Gorilla"
+    elseif level >= 30 and level <= 39 then
+        NameQuest = "BuggyQuest1"
+        LevelQ = 1
+        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        CFQ = CFrame.new(-1130, 4, 3820)  
+        Ms = "Pirate"
+    elseif level >= 40 and level <= 59 then
+        NameQuest = "BuggyQuest1"
+        LevelQ = 2
+        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
+        Ms = "Brute"
     end
-end
 
-function GomQuai(character)
-    if not NameQuest then return end
+    function TweenToPosition(character, targetPosition)
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            local tween = TweenService:Create(
+                humanoidRootPart,
+                TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                {CFrame = CFrame.new(targetPosition)}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
 
-    for _, targetPosition in ipairs(CFT) do
-        -- Tween nhân vật đến vị trí CFT
-        TweenToPosition(character, targetPosition.Position)
-        
-        local enemies = {} -- Danh sách quái cần gom
-        
-        -- Tìm tất cả quái có tên phù hợp trong phạm vi 125
-        for _, enemy in pairs(workspace:GetChildren()) do
-            if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy.Name == Ms then
-                local distance = (enemy.HumanoidRootPart.Position - targetPosition.Position).magnitude
-                if distance <= 125 then
-                    table.insert(enemies, enemy)
+    function GomQuai(character)
+        if not NameQuest then return end
+
+        for _, targetPosition in ipairs(CFT) do
+            -- Tween nhân vật đến vị trí CFT
+            TweenToPosition(character, targetPosition.Position)
+            
+            local enemies = {} -- Danh sách quái cần gom
+            
+            -- Tìm tất cả quái có tên phù hợp trong phạm vi 125
+            for _, enemy in pairs(workspace:GetChildren()) do
+                if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy.Name == Ms then
+                    local distance = (enemy.HumanoidRootPart.Position - targetPosition.Position).magnitude
+                    if distance <= 125 then
+                        table.insert(enemies, enemy)
+                    end
+                end
+            end
+            
+            -- Di chuyển từng quái đến vị trí gom
+            for _, enemy in pairs(enemies) do
+                local rootPart = enemy:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local targetCFrame = CFrame.new(targetPosition.Position.X, rootPart.Position.Y, targetPosition.Position.Z) -- Giữ nguyên Y
+                    
+                    local tween = TweenService:Create(
+                        rootPart,
+                        TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        {CFrame = targetCFrame}
+                    )
+                    
+                    tween:Play()
+                end
+            end
+            
+            -- Chờ quái trong phạm vi chết hết trước khi tiếp tục
+            while #enemies > 0 do
+                task.wait(1)
+                for i = #enemies, 1, -1 do
+                    if not enemies[i] or not enemies[i]:FindFirstChild("Humanoid") or enemies[i].Humanoid.Health <= 0 then
+                        table.remove(enemies, i)
+                    end
                 end
             end
         end
-        
-        -- Di chuyển từng quái đến vị trí gom
-        for _, enemy in pairs(enemies) do
-            local rootPart = enemy:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local targetCFrame = CFrame.new(targetPosition.Position.X, rootPart.Position.Y, targetPosition.Position.Z) -- Giữ nguyên Y
-                
-                local tween = TweenService:Create(
-                    rootPart,
-                    TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                    {CFrame = targetCFrame}
-                )
-                
-                tween:Play()
-            end
-        end
-        
-        -- Chờ quái trong phạm vi chết hết trước khi tiếp tục
-        while #enemies > 0 do
-            task.wait(1)
-            for i = #enemies, 1, -1 do
-                if not enemies[i] or not enemies[i]:FindFirstChild("Humanoid") or enemies[i].Humanoid.Health <= 0 then
-                    table.remove(enemies, i)
-                end
-            end
-        end
     end
+
+    GomQuai(character)
 end
+
+player.CharacterAdded:Connect(OnCharacterAdded)
+OnCharacterAdded(GetCharacter())
