@@ -50,7 +50,7 @@ local function OnCharacterAdded(character)
             local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y + 10, targetPosition.Z)
             local tween = TweenService:Create(
                 humanoidRootPart,
-                TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                TweenInfo.new(0.7, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                 {CFrame = targetCFrame}
             )
             tween:Play()
@@ -82,7 +82,7 @@ local function OnCharacterAdded(character)
                     local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
                     local tween = TweenService:Create(
                         mob.HumanoidRootPart,
-                        TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                         {CFrame = targetCFrame}
                     )
                     tween:Play()
@@ -105,11 +105,11 @@ local function OnCharacterAdded(character)
     function MoveThroughPoints(character)
         for _, targetPosition in ipairs(CFT) do
             TweenToPosition(character, targetPosition.Position)
-            task.wait(1.5) -- Dừng 1.5s trước khi gom quái
+            task.wait(1) -- Dừng 1s trước khi gom quái
             GatherMobs()
             
             while not AllMobsDead() do
-                task.wait(0.5) -- Chờ quái chết hết mới di chuyển tiếp
+                task.wait(0.3) -- Chờ quái chết hết mới di chuyển tiếp
             end
         end
     end
