@@ -2,7 +2,8 @@ local TweenService = game:GetService("TweenService")
 local player = game.Players.LocalPlayer
 
 local function GetCharacter()
-    return player.Character or player.CharacterAdded:Wait()
+    local character = player.Character or player.CharacterAdded:Wait()
+    return character
 end
 
 local function OnCharacterAdded(character)
