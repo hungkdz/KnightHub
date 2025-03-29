@@ -1,5 +1,4 @@
 -- 🛠 Khai báo dịch vụ
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -20,32 +19,23 @@ player.CharacterAdded:Connect(onCharacterAdded)
 
 -- 🖥 Load Fluent UI
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local Window = Library:CreateWindow({ Title = "Knight Hub", SubTitle = "By HungK", Size = UDim2.fromOffset(480, 370), Theme = "Dark" })
 
-if not Library then
-    warn("Fluent UI không tải được!")
-    return
-end
-
-local Window = Library:CreateWindow({
-    Title = "Knight Hub",
-    SubTitle = "By HungK",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(480, 370),
-    Acrylic = true,
-    Theme = "Dark"
-})
-
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main Farm" })
-}
-
--- 🎛️ Thêm Toggle Farm Level
+local Tabs = { Main = Window:AddTab({ Title = "Main Farm" }) }
 local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Farm Level", Default = false })
-_G.FarmLevel = false  
 
--- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
-local LastQuest = nil  
+_G.FarmLevel = false
+
+Toggle:OnChanged(function()
+    _G.FarmLevel = Toggle.Value
+    print("Farm Level toggled:", _G.FarmLevel)
+    if _G.FarmLevel then
+        while _G.FarmLevel do
+            GetQuest()
+            task.wait(0.1)
+        end
+    end
+end)
 
 -- 📌 Kiểm tra nhân vật có nhiệm vụ không
 function HasActiveQuest()
@@ -57,8 +47,10 @@ end
 function TweenToPosition(targetPosition)
     if not humanoidRootPart or not humanoid or not _G.FarmLevel then return end
 
+    print("Di chuyển đến:", targetPosition)
+
     local distance = (targetPosition - humanoidRootPart.Position).Magnitude
-    if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
+    if distance < 5 then return end  
 
     local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
@@ -67,7 +59,7 @@ function TweenToPosition(targetPosition)
     tween.Completed:Wait()
 end
 
--- 🔍 Quét quái trong phạm vi 125
+-- 📌 Quét quái trong phạm vi 125
 function FindMobs()
     local mobs = {}
     for _, v in pairs(Workspace:GetChildren()) do
@@ -77,13 +69,16 @@ function FindMobs()
             end
         end
     end
+    print("Số lượng quái tìm thấy:", #mobs)
     return mobs
 end
 
--- 🌀 Gom quái vào vị trí X, Z của CFT, giữ nguyên Y
+-- 📌 Gom quái về đúng vị trí X, Z của CFT, giữ nguyên Y
 function GatherMobs(targetCFrame)
     local mobs = FindMobs()
     if #mobs == 0 then return end
+
+    print("Gom quái vào:", targetCFrame.Position)
 
     for _, mob in pairs(mobs) do
         if mob:FindFirstChild("HumanoidRootPart") then
@@ -95,7 +90,7 @@ function GatherMobs(targetCFrame)
     end
 end
 
--- ⏳ Chờ quái chết hết trước khi di chuyển tiếp
+-- 📌 Chờ quái chết hết trước khi di chuyển tiếp
 function WaitForMobsToDie()
     while _G.FarmLevel do
         local mobs = FindMobs()
@@ -104,72 +99,57 @@ function WaitForMobsToDie()
     end
 end
 
--- 🏆 Nhận nhiệm vụ và di chuyển đến từng điểm trong CFT
+-- 🏆 Nhận nhiệm vụ và farm quái
 function GetQuest()
     if not player.Data or not player.Data:FindFirstChild("Level") then return end
 
     local level = player.Data.Level.Value  
+    print("Level hiện tại:", level)
+
     local NameQuest, LevelQ, CFQ
 
-    -- 📌 Xác định nhiệm vụ theo cấp độ
     if level >= 1 and level <= 9 then
         NameQuest = "BanditQuest1"
         LevelQ = 1
-        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619)}
         CFQ = CFrame.new(1050, 16, 1540)  
         Ms = "Bandit"
     elseif level >= 10 and level <= 14 then
         NameQuest = "JungleQuest"
         LevelQ = 1
-        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484)}
+        CFT = {CFrame.new(-1673, 30, -73), CFrame.new(-1570, 30, 339)}
         CFQ = CFrame.new(-1600, 36, 150)  
         Ms = "Monkey"
-    elseif level >= 15 and level <= 29 then
-        NameQuest = "JungleQuest"
-        LevelQ = 2
-        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
-        CFQ = CFrame.new(-1600, 36, 150)  
-        Ms = "Gorilla"
     else
+        print("Không có nhiệm vụ phù hợp!")
         return
     end
 
-    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
     if not HasActiveQuest() or LastQuest ~= NameQuest then
         LastQuest = NameQuest
+        print("Nhận nhiệm vụ:", NameQuest)
         TweenToPosition(CFQ.Position)
+
+        if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+
+        local success = pcall(function()
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+        end)
+
+        if success then
+            LastQuest = NameQuest
+        end
     end
 
-    -- 🏁 Nhận nhiệm vụ nếu chưa có
-    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
-
-    local success = pcall(function()
-        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
-    end)
-
-    if success then
-        LastQuest = NameQuest
-    end
-
-    -- 🔄 Di chuyển đến từng điểm trong CFT và gom quái
+    -- 🔄 Bắt đầu Farm
     for _, cft in ipairs(CFT) do
         if not _G.FarmLevel then break end
 
+        print("Di chuyển đến vị trí farm:", cft.Position)
         TweenToPosition(cft.Position)
-        task.wait(math.random(1, 2))  -- Dừng lại 1-2 giây
+        task.wait(math.random(1, 2))
 
-        GatherMobs(cft)  -- Gom quái về điểm này
-        WaitForMobsToDie()  -- Chờ quái chết trước khi đi tiếp
+        GatherMobs(cft)
+        WaitForMobsToDie()
     end
 end
-
--- 🎛️ Kích hoạt Farm Level
-Toggle:OnChanged(function()
-    _G.FarmLevel = Toggle.Value  
-    if _G.FarmLevel then
-        while _G.FarmLevel do
-            GetQuest()
-            task.wait(0.1)  
-        end
-    end
-end)
