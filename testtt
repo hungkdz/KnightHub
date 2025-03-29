@@ -7,7 +7,18 @@ local function GetCharacter()
     return character
 end
 
+local function ApplyFlight(character)
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 50, 0) 
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Parent = humanoidRootPart
+    end
+end
+
 local function OnCharacterAdded(character)
+    ApplyFlight(character)
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFT, CFQ, Ms
 
@@ -47,10 +58,10 @@ local function OnCharacterAdded(character)
     function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
-            local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y + 20, targetPosition.Z)
+            local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z)
             local tween = TweenService:Create(
                 humanoidRootPart,
-                TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                 {CFrame = targetCFrame}
             )
             tween:Play()
@@ -58,26 +69,10 @@ local function OnCharacterAdded(character)
         end
     end
 
-    function GetNearestCFTPosition(mob)
-        local closestPosition = nil
-        local minDistance = math.huge
-        local mobPosition = mob.HumanoidRootPart.Position
-
-        for _, cft in ipairs(CFT) do
-            local distance = (Vector2.new(mobPosition.X, mobPosition.Z) - Vector2.new(cft.Position.X, cft.Position.Z)).Magnitude
-            if distance < minDistance then
-                minDistance = distance
-                closestPosition = cft.Position
-            end
-        end
-
-        return closestPosition
-    end
-
     function GatherMobs()
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
-                local targetPosition = GetNearestCFTPosition(mob)
+                local targetPosition = CFT[1].Position
                 if targetPosition then
                     local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
                     local tween = TweenService:Create(
@@ -105,11 +100,10 @@ local function OnCharacterAdded(character)
     function MoveThroughPoints(character)
         for _, targetPosition in ipairs(CFT) do
             TweenToPosition(character, targetPosition.Position)
-            task.wait(1) -- Dừng 1s trước khi quét quái
+            task.wait(1)
             GatherMobs()
-            
             while not AllMobsDead() do
-                task.wait(0.2) -- Kiểm tra quái chết hết trước khi tiếp tục
+                task.wait(0.2)
             end
         end
     end
