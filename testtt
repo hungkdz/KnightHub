@@ -39,7 +39,7 @@ local function OnCharacterAdded(character)
     elseif level >= 40 and level <= 59 then
         NameQuest = "BuggyQuest1"
         LevelQ = 2
-        CFT = {CFrame.new(-1204.29492, 0, 4286.92773), CFrame.new(-962.269287, 30, 4312.79834), CFrame.new(-1333.89319, 30, 4227.29639)}
+        CFT = {CFrame.new(-1204.29492, 30, 4286.92773), CFrame.new(-962.269287, 30, 4312.79834), CFrame.new(-1333.89319, 30, 4227.29639)}
         CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
         Ms = "Brute"
     end
@@ -47,10 +47,10 @@ local function OnCharacterAdded(character)
     function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
-            local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y + 10, targetPosition.Z)
+            local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y + 20, targetPosition.Z)
             local tween = TweenService:Create(
                 humanoidRootPart,
-                TweenInfo.new(0.7, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                 {CFrame = targetCFrame}
             )
             tween:Play()
@@ -82,7 +82,7 @@ local function OnCharacterAdded(character)
                     local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
                     local tween = TweenService:Create(
                         mob.HumanoidRootPart,
-                        TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                         {CFrame = targetCFrame}
                     )
                     tween:Play()
@@ -105,11 +105,11 @@ local function OnCharacterAdded(character)
     function MoveThroughPoints(character)
         for _, targetPosition in ipairs(CFT) do
             TweenToPosition(character, targetPosition.Position)
-            task.wait(1) -- Dừng 1s trước khi gom quái
+            task.wait(1) -- Dừng 1s trước khi quét quái
             GatherMobs()
             
             while not AllMobsDead() do
-                task.wait(0.3) -- Chờ quái chết hết mới di chuyển tiếp
+                task.wait(0.2) -- Kiểm tra quái chết hết trước khi tiếp tục
             end
         end
     end
