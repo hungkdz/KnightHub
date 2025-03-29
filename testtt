@@ -1,5 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local player = game.Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local function GetCharacter()
     local character = player.Character or player.CharacterAdded:Wait()
@@ -38,7 +39,7 @@ local function OnCharacterAdded(character)
     elseif level >= 40 and level <= 59 then
         NameQuest = "BuggyQuest1"
         LevelQ = 2
-        CFT = {CFrame.new(-1204.29492, 20, 4286.92773), CFrame.new(-962.269287, 20, 4312.79834), CFrame.new(-1333.89319, 20, 4227.29639)}
+        CFT = {CFrame.new(-1204.29492, 0, 4286.92773), CFrame.new(-962.269287, 30, 4312.79834), CFrame.new(-1333.89319, 30, 4227.29639)}
         CFQ = CFrame.new(-1140.176, 4.752, 3827.405)  
         Ms = "Brute"
     end
@@ -57,10 +58,59 @@ local function OnCharacterAdded(character)
         end
     end
 
+    function GetNearestCFTPosition(mob)
+        local closestPosition = nil
+        local minDistance = math.huge
+        local mobPosition = mob.HumanoidRootPart.Position
+
+        for _, cft in ipairs(CFT) do
+            local distance = (Vector2.new(mobPosition.X, mobPosition.Z) - Vector2.new(cft.Position.X, cft.Position.Z)).Magnitude
+            if distance < minDistance then
+                minDistance = distance
+                closestPosition = cft.Position
+            end
+        end
+
+        return closestPosition
+    end
+
+    function GatherMobs()
+        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
+                local targetPosition = GetNearestCFTPosition(mob)
+                if targetPosition then
+                    local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
+                    local tween = TweenService:Create(
+                        mob.HumanoidRootPart,
+                        TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        {CFrame = targetCFrame}
+                    )
+                    tween:Play()
+                    tween.Completed:Wait()
+                    mob.HumanoidRootPart.Anchored = true
+                end
+            end
+        end
+    end
+
+    function AllMobsDead()
+        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if mob.Name == Ms then
+                return false
+            end
+        end
+        return true
+    end
+
     function MoveThroughPoints(character)
         for _, targetPosition in ipairs(CFT) do
             TweenToPosition(character, targetPosition.Position)
-            task.wait(1.5) -- Dừng 1.5s trước khi đến điểm tiếp theo
+            task.wait(1.5) -- Dừng 1.5s trước khi gom quái
+            GatherMobs()
+            
+            while not AllMobsDead() do
+                task.wait(0.5) -- Chờ quái chết hết mới di chuyển tiếp
+            end
         end
     end
 
