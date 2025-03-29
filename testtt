@@ -1,70 +1,175 @@
+-- 🛠 Khai báo dịch vụ
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local rootPart = character:WaitForChild("HumanoidRootPart")
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
 
-local CFT_Positions = { -- Danh sách vị trí gom quái
-    Vector3.new(100, 10, 200),
-    Vector3.new(300, 10, 400),
-    Vector3.new(500, 10, 600),
-}
-
-function GetNearestCFTPosition(position)
-    local nearestPos = nil
-    local nearestDist = math.huge
-
-    for _, cftPos in ipairs(CFT_Positions) do
-        local dist = (Vector3.new(cftPos.X, position.Y, cftPos.Z) - position).Magnitude
-        if dist < nearestDist then
-            nearestDist = dist
-            nearestPos = cftPos
-        end
-    end
-
-    return nearestPos
+local function onCharacterAdded(char)
+    character = char
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoid = character:FindFirstChildOfClass("Humanoid")
 end
 
-function GatherEnemies()
-    local enemies = {}
-    for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-        if enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") then
-            local distance = (enemy.HumanoidRootPart.Position - rootPart.Position).Magnitude
-            if distance <= 125 then
-                table.insert(enemies, enemy)
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- 🖥 Load Fluent UI
+local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+
+if not Library then
+    warn("Fluent UI không tải được!")
+    return
+end
+
+local Window = Library:CreateWindow({
+    Title = "Knight Hub",
+    SubTitle = "By HungK",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 370),
+    Acrylic = true,
+    Theme = "Dark"
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main Farm" })
+}
+
+-- 🎛️ Thêm Toggle Farm Level
+local Toggle = Tabs.Main:AddToggle("MyToggle", { Title = "Farm Level", Default = false })
+_G.FarmLevel = false  
+
+-- 📌 Biến lưu nhiệm vụ cuối cùng đã nhận
+local LastQuest = nil  
+
+-- 📌 Kiểm tra nhân vật có nhiệm vụ không
+function HasActiveQuest()
+    local questFrame = player.PlayerGui:FindFirstChild("Main") and player.PlayerGui.Main:FindFirstChild("Quest")
+    return questFrame and questFrame.Visible
+end
+
+-- 🏃‍♂️ Tween đến vị trí mượt hơn
+function TweenToPosition(targetPosition)
+    if not humanoidRootPart or not humanoid or not _G.FarmLevel then return end
+
+    local distance = (targetPosition - humanoidRootPart.Position).Magnitude
+    if distance < 5 then return end  -- Tránh tween khi đã gần vị trí
+
+    local tweenInfo = TweenInfo.new(distance / 185, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPosition) })
+
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- 🔍 Quét quái trong phạm vi 125
+function FindMobs()
+    local mobs = {}
+    for _, v in pairs(Workspace:GetChildren()) do
+        if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") then
+            if v.Name == Ms and (v.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude <= 125 then
+                table.insert(mobs, v)
             end
         end
     end
+    return mobs
+end
 
-    if #enemies == 0 then return end
+-- 🌀 Gom quái vào vị trí X, Z của CFT, giữ nguyên Y
+function GatherMobs(targetCFrame)
+    local mobs = FindMobs()
+    if #mobs == 0 then return end
 
-    local gatherPoint = GetNearestCFTPosition(rootPart.Position)
-    if not gatherPoint then return end
-
-    -- Tween nhân vật lên trên điểm gom quái
-    local targetPos = gatherPoint + Vector3.new(0, 50, 0)
-    local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(rootPart, tweenInfo, {Position = targetPos})
-    tween:Play()
-    tween.Completed:Wait()
-
-    -- Gom quái vào điểm đã chọn
-    for _, enemy in pairs(enemies) do
-        if enemy:FindFirstChild("HumanoidRootPart") then
-            local enemyPos = Vector3.new(gatherPoint.X, enemy.HumanoidRootPart.Position.Y, gatherPoint.Z)
-            local enemyTween = TweenService:Create(enemy.HumanoidRootPart, tweenInfo, {Position = enemyPos})
-            enemyTween:Play()
-        end
-    end
-
-    task.wait(1) -- Chờ quái di chuyển xong
-
-    -- Cố định quái tại vị trí gom
-    for _, enemy in pairs(enemies) do
-        if enemy:FindFirstChild("HumanoidRootPart") then
-            enemy.HumanoidRootPart.Anchored = true
+    for _, mob in pairs(mobs) do
+        if mob:FindFirstChild("HumanoidRootPart") then
+            local targetPos = Vector3.new(targetCFrame.Position.X, mob.HumanoidRootPart.Position.Y, targetCFrame.Position.Z)
+            local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+            local tween = TweenService:Create(mob.HumanoidRootPart, tweenInfo, { Position = targetPos })
+            tween:Play()
         end
     end
 end
+
+-- ⏳ Chờ quái chết hết trước khi di chuyển tiếp
+function WaitForMobsToDie()
+    while _G.FarmLevel do
+        local mobs = FindMobs()
+        if #mobs == 0 then break end
+        task.wait(1)
+    end
+end
+
+-- 🏆 Nhận nhiệm vụ và di chuyển đến từng điểm trong CFT
+function GetQuest()
+    if not player.Data or not player.Data:FindFirstChild("Level") then return end
+
+    local level = player.Data.Level.Value  
+    local NameQuest, LevelQ, CFQ
+
+    -- 📌 Xác định nhiệm vụ theo cấp độ
+    if level >= 1 and level <= 9 then
+        NameQuest = "BanditQuest1"
+        LevelQ = 1
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        CFQ = CFrame.new(1050, 16, 1540)  
+        Ms = "Bandit"
+    elseif level >= 10 and level <= 14 then
+        NameQuest = "JungleQuest"
+        LevelQ = 1
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484)}
+        CFQ = CFrame.new(-1600, 36, 150)  
+        Ms = "Monkey"
+    elseif level >= 15 and level <= 29 then
+        NameQuest = "JungleQuest"
+        LevelQ = 2
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        CFQ = CFrame.new(-1600, 36, 150)  
+        Ms = "Gorilla"
+    else
+        return
+    end
+
+    -- 📌 Nếu NameQuest thay đổi hoặc không có nhiệm vụ, di chuyển đến NPC
+    if not HasActiveQuest() or LastQuest ~= NameQuest then
+        LastQuest = NameQuest
+        TweenToPosition(CFQ.Position)
+    end
+
+    -- 🏁 Nhận nhiệm vụ nếu chưa có
+    if (humanoidRootPart.Position - CFQ.Position).Magnitude > 5 then return end
+
+    local success = pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQ)
+    end)
+
+    if success then
+        LastQuest = NameQuest
+    end
+
+    -- 🔄 Di chuyển đến từng điểm trong CFT và gom quái
+    for _, cft in ipairs(CFT) do
+        if not _G.FarmLevel then break end
+
+        TweenToPosition(cft.Position)
+        task.wait(math.random(1, 2))  -- Dừng lại 1-2 giây
+
+        GatherMobs(cft)  -- Gom quái về điểm này
+        WaitForMobsToDie()  -- Chờ quái chết trước khi đi tiếp
+    end
+end
+
+-- 🎛️ Kích hoạt Farm Level
+Toggle:OnChanged(function()
+    _G.FarmLevel = Toggle.Value  
+    if _G.FarmLevel then
+        while _G.FarmLevel do
+            GetQuest()
+            task.wait(0.1)  
+        end
+    end
+end)
