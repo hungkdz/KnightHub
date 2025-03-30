@@ -10,9 +10,10 @@ end
 local function ApplyFlight(character)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
+        -- Giữ nguyên nhân vật trên không
         local bodyPosition = Instance.new("BodyPosition")
         bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyPosition.Position = humanoidRootPart.Position -- Giữ nguyên vị trí Y hiện tại
+        bodyPosition.Position = humanoidRootPart.Position
         bodyPosition.Parent = humanoidRootPart
 
         local bodyGyro = Instance.new("BodyGyro")
@@ -60,44 +61,47 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    function TweenToPosition(character, targetPosition)
+    local function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
-            local targetCFrame = CFrame.new(targetPosition.X, humanoidRootPart.Position.Y, targetPosition.Z)
-            local tween = TweenService:Create(
-                humanoidRootPart,
-                TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                {CFrame = targetCFrame}
-            )
-            tween:Play()
-            tween.Completed:Wait()
+            local currentPosition = humanoidRootPart.Position
+            if (currentPosition - targetPosition).magnitude > 1 then -- Chỉ tween nếu vị trí thay đổi
+                local targetCFrame = CFrame.new(targetPosition.X, currentPosition.Y, targetPosition.Z)
+                local tween = TweenService:Create(
+                    humanoidRootPart,
+                    TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                    {CFrame = targetCFrame}
+                )
+                tween:Play()
+                tween.Completed:Wait()
+            end
         end
     end
 
-    function GatherMobs()
+    local function GatherMobs()
         local gathered = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") then
                 if mob.Humanoid.Health > 0 then
                     local targetPosition = CFT[1].Position
-                    if targetPosition then
-                        local targetCFrame = CFrame.new(targetPosition.X, targetPosition.Y, targetPosition.Z)
-                        local tween = TweenService:Create(
-                            mob.HumanoidRootPart,
-                            TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                            {CFrame = targetCFrame}
-                        )
-                        tween:Play()
-                        mob.HumanoidRootPart.Anchored = true
-                        gathered = gathered + 1
-                    end
+                    local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
+                    
+                    -- Tween quái về vị trí mong muốn
+                    local tween = TweenService:Create(
+                        mob.HumanoidRootPart,
+                        TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        {CFrame = targetCFrame}
+                    )
+                    tween:Play()
+                    mob.HumanoidRootPart.Anchored = true
+                    gathered = gathered + 1
                 end
             end
         end
         return gathered > 0
     end
 
-    function AllMobsDead()
+    local function AllMobsDead()
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms and mob:FindFirstChild("Humanoid") then
                 if mob.Humanoid.Health > 0 then
@@ -108,7 +112,7 @@ local function OnCharacterAdded(character)
         return true
     end
 
-    function MoveThroughPoints(character)
+    local function MoveThroughPoints(character)
         for _, targetPosition in ipairs(CFT) do
             TweenToPosition(character, targetPosition.Position)
             task.wait(1)
