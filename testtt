@@ -10,7 +10,7 @@ end
 local function ApplyFlight(character, fixedY)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        -- 🔥 Giữ nhân vật lơ lửng bằng BodyVelocity
+        -- 🔥 Giữ nhân vật trên không trung bằng BodyVelocity
         local bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bodyGyro.CFrame = humanoidRootPart.CFrame
@@ -18,10 +18,8 @@ local function ApplyFlight(character, fixedY)
 
         local bodyVelocity = Instance.new("BodyVelocity")
         bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0) -- Nhỏ để giữ nhân vật trên không
+        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0) -- Giữ yên trên không
         bodyVelocity.Parent = humanoidRootPart
-
-        humanoidRootPart.Anchored = false -- Đảm bảo không bị cố định cứng
     end
 end
 
@@ -85,19 +83,16 @@ local function OnCharacterAdded(character)
     function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
-            local currentPosition = humanoidRootPart.Position
-            if (currentPosition - targetPosition).magnitude > 3 then -- Chỉ tween nếu vị trí thay đổi
-                EnableNoclip(character) -- 🔥 Bật Noclip trước khi Tween
-                local targetCFrame = CFrame.new(targetPosition.X, fixedY, targetPosition.Z) -- Giữ Y cố định
-                local tween = TweenService:Create(
-                    humanoidRootPart,
-                    TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                    {CFrame = targetCFrame}
-                )
-                tween:Play()
-                tween.Completed:Wait()
-                DisableNoclip(character) -- ❌ Tắt Noclip sau khi Tween xong
-            end
+            EnableNoclip(character) -- 🔥 Bật Noclip trước khi Tween
+            local targetCFrame = CFrame.new(targetPosition.X, fixedY, targetPosition.Z) -- Giữ Y cố định
+            local tween = TweenService:Create(
+                humanoidRootPart,
+                TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                {CFrame = targetCFrame}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+            DisableNoclip(character) -- ❌ Tắt Noclip sau khi Tween xong
         end
     end
 
@@ -105,20 +100,18 @@ local function OnCharacterAdded(character)
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
                 local targetPosition = CFT[1].Position
-                if targetPosition then
-                    local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
+                local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
 
-                    -- 🛠️ Gỡ Anchored trước khi gom quái
-                    mob.HumanoidRootPart.Anchored = false
+                -- 🛠️ Gỡ Anchored trước khi gom quái
+                mob.HumanoidRootPart.Anchored = false
 
-                    local tween = TweenService:Create(
-                        mob.HumanoidRootPart,
-                        TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                        {CFrame = targetCFrame}
-                    )
-                    tween:Play()
-                    tween.Completed:Wait()
-                end
+                local tween = TweenService:Create(
+                    mob.HumanoidRootPart,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                    {CFrame = targetCFrame}
+                )
+                tween:Play()
+                tween.Completed:Wait()
             end
         end
     end
@@ -133,12 +126,12 @@ local function OnCharacterAdded(character)
     end
 
     function MoveThroughPoints(character)
-        for _, targetPosition in ipairs(CFT) do
-            TweenToPosition(character, targetPosition.Position)
+        for _, targetCFrame in ipairs(CFT) do
+            TweenToPosition(character, targetCFrame.Position) -- Di chuyển nhân vật
             task.wait(1)
-            GatherMobs()
+            GatherMobs() -- Gom quái về đúng vị trí
             while not AllMobsDead() do
-                task.wait(0.2)
+                task.wait(0.2) -- Chờ quái chết hết
             end
         end
     end
