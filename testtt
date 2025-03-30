@@ -117,14 +117,19 @@ local function OnCharacterAdded(character)
         end
     end
 
-    -- 🔥 **Kiểm tra quái còn sống**
-    local function AllMobsDead()
+    -- 🔥 **Kiểm tra quái còn sống hoặc bị lỗi**
+    local function AllMobsDeadOrBugged()
+        local count = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms then
-                return false
+                local humanoid = mob:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                    count = count + 1
+                end
             end
         end
-        return true
+        -- Nếu chỉ còn 1-2 con nhưng không chết => có thể bị lỗi
+        return count <= 1
     end
 
     -- 🔥 **Di chuyển giữa các điểm và gom quái**
@@ -133,7 +138,7 @@ local function OnCharacterAdded(character)
             TweenToPosition(character, targetCFrame)
             task.wait(1)
             GatherMobs()
-            while not AllMobsDead() do
+            while not AllMobsDeadOrBugged() do
                 task.wait(0.2)
             end
         end
