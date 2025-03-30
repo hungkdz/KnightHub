@@ -16,7 +16,7 @@ local function ApplyFlight(character)
 
         local bodyVelocity = Instance.new("BodyVelocity")
         bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
+        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0) -- Giữ nhân vật bay cố định
         bodyVelocity.Parent = humanoidRootPart
     end
 end
@@ -75,9 +75,7 @@ local function OnCharacterAdded(character)
     end
 
     function GatherMobs(targetCFrame)
-        local gathered = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-            if gathered >= 3 then break end
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") and (mob.HumanoidRootPart.Position - targetCFrame.Position).magnitude <= 125 then
                 if mob.HumanoidRootPart.Anchored then
                     mob.HumanoidRootPart.Anchored = false
@@ -85,7 +83,7 @@ local function OnCharacterAdded(character)
 
                 local bodyVelocity = Instance.new("BodyVelocity")
                 bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0) -- Giữ quái ở vị trí
                 bodyVelocity.Parent = mob.HumanoidRootPart
 
                 local tween = TweenService:Create(
@@ -94,26 +92,27 @@ local function OnCharacterAdded(character)
                     {CFrame = targetCFrame}
                 )
                 tween:Play()
-                gathered = gathered + 1
             end
         end
     end
 
-    function AllMobsDead()
-        local count = 0
-        local mobWithIssue = false
+    function CheckMobs()
+        local hasAlive = false
+        local hasBugged = false
+
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-            if mob.Name == Ms then
-                count = count + 1
-                if mob.Humanoid.Health == mob.Humanoid.MaxHealth then
-                    mobWithIssue = true
+            if mob.Name == Ms and mob:FindFirstChild("Humanoid") then
+                if mob.Humanoid.Health > 0 then
+                    hasAlive = true
+                    local oldHealth = mob.Humanoid.Health
+                    task.wait(5) -- Chờ 5 giây kiểm tra quái có mất máu không
+                    if mob.Humanoid.Health == oldHealth then
+                        hasBugged = true
+                    end
                 end
             end
         end
-        if count == 0 or mobWithIssue then
-            return true
-        end
-        return false
+        return hasAlive, hasBugged
     end
 
     function MoveThroughPoints(character)
@@ -122,8 +121,14 @@ local function OnCharacterAdded(character)
                 TweenToPosition(character, targetCFrame.Position, 150)
                 task.wait(1)
                 GatherMobs(targetCFrame)
-                while not AllMobsDead() do
-                    task.wait(0.2)
+
+                -- Chờ tất cả quái chết hoặc có quái bị lỗi
+                while true do
+                    local hasAlive, hasBugged = CheckMobs()
+                    if not hasAlive or hasBugged then
+                        break
+                    end
+                    task.wait(1)
                 end
             end
         end
