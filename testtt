@@ -10,24 +10,32 @@ end
 local function ApplyFlight(character)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        -- Giữ nhân vật trên không trung nhưng vẫn di chuyển được
-        local bodyPosition = Instance.new("BodyPosition")
-        bodyPosition.MaxForce = Vector3.new(math.huge, 0, math.huge) -- Chỉ giữ Y, không giữ XZ
-        bodyPosition.Position = Vector3.new(humanoidRootPart.Position.X, humanoidRootPart.Position.Y, humanoidRootPart.Position.Z)
-        bodyPosition.Parent = humanoidRootPart
-
+        -- Giữ nhân vật trên không trung
         local bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bodyGyro.CFrame = humanoidRootPart.CFrame
         bodyGyro.Parent = humanoidRootPart
 
-        -- Cập nhật vị trí Y liên tục để giữ trên không
-        task.spawn(function()
-            while humanoidRootPart.Parent do
-                bodyPosition.Position = Vector3.new(humanoidRootPart.Position.X, 50, humanoidRootPart.Position.Z) -- Đặt Y cố định
-                task.wait(0.1)
-            end
-        end)
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 1, 0) -- Giữ nhân vật lơ lửng
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Parent = humanoidRootPart
+    end
+end
+
+local function EnableNoclip(character)
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
+local function DisableNoclip(character)
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+        end
     end
 end
 
@@ -69,22 +77,66 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    local function TweenToPosition(character, targetPosition)
+    function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
             local currentPosition = humanoidRootPart.Position
             if (currentPosition - targetPosition).magnitude > 3 then -- Chỉ tween nếu vị trí thay đổi
-                local targetCFrame = CFrame.new(targetPosition.X, 50, targetPosition.Z)
+                EnableNoclip(character) -- 🔥 Bật Noclip trước khi Tween
+                local targetCFrame = CFrame.new(targetPosition.X, targetPosition.Y, targetPosition.Z)
                 local tween = TweenService:Create(
                     humanoidRootPart,
-                    TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                    TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                     {CFrame = targetCFrame}
                 )
                 tween:Play()
                 tween.Completed:Wait()
+                DisableNoclip(character) -- ❌ Tắt Noclip sau khi Tween xong
             end
         end
     end
 
-    local function GatherMobs()
+    function GatherMobs()
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
+                local targetPosition = CFT[1].Position
+                if targetPosition then
+                    local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
+                    local tween = TweenService:Create(
+                        mob.HumanoidRootPart,
+                        TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        {CFrame = targetCFrame}
+                    )
+                    tween:Play()
+                    tween.Completed:Wait()
+                    mob.HumanoidRootPart.Anchored = true
+                end
+            end
+        end
+    end
+
+    function AllMobsDead()
+        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if mob.Name == Ms then
+                return false
+            end
+        end
+        return true
+    end
+
+    function MoveThroughPoints(character)
+        for _, targetPosition in ipairs(CFT) do
+            TweenToPosition(character, targetPosition.Position)
+            task.wait(1)
+            GatherMobs()
+            while not AllMobsDead() do
+                task.wait(0.2)
+            end
+        end
+    end
+
+    MoveThroughPoints(character)
+end
+
+player.CharacterAdded:Connect(OnCharacterAdded)
+OnCharacterAdded(GetCharacter())
