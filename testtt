@@ -22,16 +22,6 @@ local function ApplyFlight(character, fixedY)
     end
 end
 
-local function AutoAttack()
-    while true do
-        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-        if tool then
-            tool:Activate()
-        end
-        task.wait(0.5) -- Tấn công liên tục mỗi 0.5s
-    end
-end
-
 local function OnCharacterAdded(character)
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFT, CFQ, Ms
@@ -88,12 +78,21 @@ local function OnCharacterAdded(character)
     function GatherMobs()
         local gathered = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-            if gathered >= 3 then break end -- 🔥 Giới hạn 3 quái
+            if gathered >= 3 then break end -- 🔥 Giới hạn chỉ gom 3 quái
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
                 local targetPosition = CFT[1].Position
                 local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
 
-                mob.HumanoidRootPart.Anchored = false -- 🔥 Gỡ Anchored để quái nhận sát thương
+                -- 🔥 Gỡ bỏ `Anchored = true`
+                if mob.HumanoidRootPart.Anchored then
+                    mob.HumanoidRootPart.Anchored = false
+                end
+
+                -- 🔥 Thêm BodyVelocity vào quái để giữ vị trí
+                local bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                bodyVelocity.Parent = mob.HumanoidRootPart
 
                 local tween = TweenService:Create(
                     mob.HumanoidRootPart,
@@ -123,7 +122,6 @@ local function OnCharacterAdded(character)
             TweenToPosition(character, targetCFrame.Position)
             task.wait(1)
             GatherMobs()
-            task.spawn(AutoAttack) -- 🔥 Bật Auto Attack khi gom quái
             while not AllMobsDead() do
                 task.wait(0.2)
             end
