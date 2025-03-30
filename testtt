@@ -1,4 +1,5 @@
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local player = game.Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -6,18 +7,99 @@ local function GetCharacter()
     return player.Character or player.CharacterAdded:Wait()
 end
 
+-- 🔥 NoClip để tránh va chạm
+local function NoClipLoop(character)
+    task.spawn(function()
+        while character and character.Parent do
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+            task.wait() -- Lặp liên tục
+        end
+    end)
+end
+
+-- 🔥 Giữ nhân vật trên không với vòng lặp task.wait
 local function ApplyFlight(character, fixedY)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        local bodyGyro = Instance.new("BodyGyro")
-        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyGyro.CFrame = humanoidRootPart.CFrame
-        bodyGyro.Parent = humanoidRootPart
-
         local bodyVelocity = Instance.new("BodyVelocity")
         bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0) -- Giữ nhân vật cố định ở vị trí Y
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
         bodyVelocity.Parent = humanoidRootPart
+
+        task.spawn(function()
+            while character and humanoidRootPart and bodyVelocity do
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0) -- Giữ nguyên vị trí
+                humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position.X, fixedY, humanoidRootPart.Position.Z)
+                task.wait(0.1) -- Lặp lại liên tục
+            end
+        end)
+    end
+end
+
+local function TweenToPosition(character, targetCFrame)
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local tween = TweenService:Create(
+            humanoidRootPart,
+            TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+            {CFrame = targetCFrame}
+        )
+        tween:Play()
+        tween.Completed:Wait()
+    end
+end
+
+local function GatherMobs(Ms, CFT)
+    local gathered = 0
+    for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+        if gathered >= 3 then break end
+        if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
+            local targetCFrame = CFT[1]
+
+            if mob.HumanoidRootPart.Anchored then
+                mob.HumanoidRootPart.Anchored = false
+            end
+
+            local bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            bodyVelocity.Parent = mob.HumanoidRootPart
+
+            local tween = TweenService:Create(
+                mob.HumanoidRootPart,
+                TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                {CFrame = targetCFrame}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+            gathered = gathered + 1
+        end
+    end
+end
+
+local function AllMobsDead(Ms)
+    for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+        if mob.Name == Ms then
+            return false
+        end
+    end
+    return true
+end
+
+local function MoveThroughPoints(character, CFT, Ms)
+    while true do -- 🔥 Lặp lại liên tục
+        for _, targetCFrame in ipairs(CFT) do
+            TweenToPosition(character, targetCFrame)
+            task.wait(1)
+            GatherMobs(Ms, CFT)
+            while not AllMobsDead(Ms) do
+                task.wait(0.2)
+            end
+        end
     end
 end
 
@@ -57,74 +139,10 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    -- Giữ nguyên Y của CFT
     local fixedY = CFT[1].Position.Y
     ApplyFlight(character, fixedY)
-
-    function TweenToPosition(character, targetCFrame)
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if humanoidRootPart then
-            local targetPosition = Vector3.new(targetCFrame.X, targetCFrame.Y, targetCFrame.Z)
-            local tween = TweenService:Create(
-                humanoidRootPart,
-                TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                {CFrame = CFrame.new(targetPosition)}
-            )
-            tween:Play()
-            tween.Completed:Wait()
-        end
-    end
-
-    function GatherMobs()
-        local gathered = 0
-        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-            if gathered >= 3 then break end
-            if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
-                local targetPosition = CFT[1].Position
-                local targetCFrame = CFrame.new(targetPosition.X, targetPosition.Y, targetPosition.Z)
-
-                if mob.HumanoidRootPart.Anchored then
-                    mob.HumanoidRootPart.Anchored = false
-                end
-
-                local bodyVelocity = Instance.new("BodyVelocity")
-                bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                bodyVelocity.Parent = mob.HumanoidRootPart
-
-                local tween = TweenService:Create(
-                    mob.HumanoidRootPart,
-                    TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                    {CFrame = targetCFrame}
-                )
-                tween:Play()
-                tween.Completed:Wait()
-                gathered = gathered + 1
-            end
-        end
-    end
-
-    function AllMobsDead()
-        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-            if mob.Name == Ms then
-                return false
-            end
-        end
-        return true
-    end
-
-    function MoveThroughPoints(character)
-        for _, targetCFrame in ipairs(CFT) do
-            TweenToPosition(character, targetCFrame)
-            task.wait(1)
-            GatherMobs()
-            while not AllMobsDead() do
-                task.wait(0.2)
-            end
-        end
-    end
-
-    MoveThroughPoints(character)
+    NoClipLoop(character)
+    MoveThroughPoints(character, CFT, Ms)
 end
 
 player.CharacterAdded:Connect(OnCharacterAdded)
