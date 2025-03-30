@@ -3,8 +3,7 @@ local player = game.Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local function GetCharacter()
-    local character = player.Character or player.CharacterAdded:Wait()
-    return character
+    return player.Character or player.CharacterAdded:Wait()
 end
 
 local function ApplyFlight(character, fixedY)
@@ -17,7 +16,7 @@ local function ApplyFlight(character, fixedY)
 
         local bodyVelocity = Instance.new("BodyVelocity")
         bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0) -- Giữ yên trên không
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0) -- Giữ nhân vật cố định ở vị trí Y
         bodyVelocity.Parent = humanoidRootPart
     end
 end
@@ -58,17 +57,18 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    local fixedY = CFT[1].Y + 10
+    -- Giữ nguyên Y của CFT
+    local fixedY = CFT[1].Position.Y
     ApplyFlight(character, fixedY)
 
-    function TweenToPosition(character, targetPosition)
+    function TweenToPosition(character, targetCFrame)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
-            local targetCFrame = CFrame.new(targetPosition.X, fixedY, targetPosition.Z)
+            local targetPosition = Vector3.new(targetCFrame.X, targetCFrame.Y, targetCFrame.Z)
             local tween = TweenService:Create(
                 humanoidRootPart,
                 TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                {CFrame = targetCFrame}
+                {CFrame = CFrame.new(targetPosition)}
             )
             tween:Play()
             tween.Completed:Wait()
@@ -78,17 +78,15 @@ local function OnCharacterAdded(character)
     function GatherMobs()
         local gathered = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-            if gathered >= 3 then break end -- 🔥 Giới hạn chỉ gom 3 quái
+            if gathered >= 3 then break end
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
                 local targetPosition = CFT[1].Position
-                local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
+                local targetCFrame = CFrame.new(targetPosition.X, targetPosition.Y, targetPosition.Z)
 
-                -- 🔥 Gỡ bỏ `Anchored = true`
                 if mob.HumanoidRootPart.Anchored then
                     mob.HumanoidRootPart.Anchored = false
                 end
 
-                -- 🔥 Thêm BodyVelocity vào quái để giữ vị trí
                 local bodyVelocity = Instance.new("BodyVelocity")
                 bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
                 bodyVelocity.Velocity = Vector3.new(0, 0, 0)
@@ -107,11 +105,9 @@ local function OnCharacterAdded(character)
     end
 
     function AllMobsDead()
-        local count = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms then
-                count = count + 1
-                if count >= 1 then return false end
+                return false
             end
         end
         return true
@@ -119,7 +115,7 @@ local function OnCharacterAdded(character)
 
     function MoveThroughPoints(character)
         for _, targetCFrame in ipairs(CFT) do
-            TweenToPosition(character, targetCFrame.Position)
+            TweenToPosition(character, targetCFrame)
             task.wait(1)
             GatherMobs()
             while not AllMobsDead() do
