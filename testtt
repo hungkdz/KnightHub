@@ -10,7 +10,6 @@ end
 local function ApplyFlight(character, fixedY)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        -- 🔥 Giữ nhân vật trên không trung bằng BodyVelocity
         local bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bodyGyro.CFrame = humanoidRootPart.CFrame
@@ -23,19 +22,13 @@ local function ApplyFlight(character, fixedY)
     end
 end
 
-local function EnableNoclip(character)
-    for _, part in pairs(character:GetChildren()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
+local function AutoAttack()
+    while true do
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool then
+            tool:Activate()
         end
-    end
-end
-
-local function DisableNoclip(character)
-    for _, part in pairs(character:GetChildren()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = true
-        end
+        task.wait(0.5) -- Tấn công liên tục mỗi 0.5s
     end
 end
 
@@ -43,7 +36,6 @@ local function OnCharacterAdded(character)
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFT, CFQ, Ms
 
-    -- 📌 Xác định nhiệm vụ theo cấp độ
     if level >= 1 and level <= 9 then
         NameQuest = "BanditQuest1"
         LevelQ = 1
@@ -76,34 +68,32 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    -- 📌 Giữ nhân vật ở trên không trung theo danh sách CFT
     local fixedY = CFT[1].Y + 10
     ApplyFlight(character, fixedY)
 
     function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
-            EnableNoclip(character) -- 🔥 Bật Noclip trước khi Tween
-            local targetCFrame = CFrame.new(targetPosition.X, fixedY, targetPosition.Z) -- Giữ Y cố định
+            local targetCFrame = CFrame.new(targetPosition.X, fixedY, targetPosition.Z)
             local tween = TweenService:Create(
                 humanoidRootPart,
-                TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                 {CFrame = targetCFrame}
             )
             tween:Play()
             tween.Completed:Wait()
-            DisableNoclip(character) -- ❌ Tắt Noclip sau khi Tween xong
         end
     end
 
     function GatherMobs()
+        local gathered = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if gathered >= 3 then break end -- 🔥 Giới hạn 3 quái
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
                 local targetPosition = CFT[1].Position
                 local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
 
-                -- 🛠️ Gỡ Anchored trước khi gom quái
-                mob.HumanoidRootPart.Anchored = false
+                mob.HumanoidRootPart.Anchored = false -- 🔥 Gỡ Anchored để quái nhận sát thương
 
                 local tween = TweenService:Create(
                     mob.HumanoidRootPart,
@@ -112,14 +102,17 @@ local function OnCharacterAdded(character)
                 )
                 tween:Play()
                 tween.Completed:Wait()
+                gathered = gathered + 1
             end
         end
     end
 
     function AllMobsDead()
+        local count = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms then
-                return false
+                count = count + 1
+                if count >= 1 then return false end
             end
         end
         return true
@@ -127,11 +120,12 @@ local function OnCharacterAdded(character)
 
     function MoveThroughPoints(character)
         for _, targetCFrame in ipairs(CFT) do
-            TweenToPosition(character, targetCFrame.Position) -- Di chuyển nhân vật
+            TweenToPosition(character, targetCFrame.Position)
             task.wait(1)
-            GatherMobs() -- Gom quái về đúng vị trí
+            GatherMobs()
+            task.spawn(AutoAttack) -- 🔥 Bật Auto Attack khi gom quái
             while not AllMobsDead() do
-                task.wait(0.2) -- Chờ quái chết hết
+                task.wait(0.2)
             end
         end
     end
