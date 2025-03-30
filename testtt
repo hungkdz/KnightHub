@@ -68,13 +68,16 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    -- 🔥 **Tween nhân vật giữa các điểm**
-    local function TweenToPosition(character, targetCFrame)
+    -- 🔥 **Tween nhân vật bằng tốc độ**
+    local function TweenToPosition(character, targetCFrame, speed)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
+            local distance = (humanoidRootPart.Position - targetCFrame.Position).Magnitude
+            local time = distance / speed -- Thời gian dựa trên tốc độ
+
             local tween = TweenService:Create(
                 humanoidRootPart,
-                TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                TweenInfo.new(time, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
                 {CFrame = targetCFrame}
             )
             tween:Play()
@@ -82,33 +85,34 @@ local function OnCharacterAdded(character)
         end
     end
 
-    -- 🔥 **Gom quái tối ưu**
-    local function GatherMobs()
+    -- 🔥 **Gom quái vào từng vị trí trong `CFT`**
+    local function GatherMobs(targetCFrame)
         local gathered = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if gathered >= 3 then break end -- Chỉ gom tối đa 3 quái
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
-                local targetCFrame = CFT[1]
+                local mobPos = mob.HumanoidRootPart.Position
+                if (mobPos - targetCFrame.Position).Magnitude <= 125 then -- 📏 Kiểm tra phạm vi 125
+                    if mob.HumanoidRootPart.Anchored then
+                        mob.HumanoidRootPart.Anchored = false
+                    end
 
-                if mob.HumanoidRootPart.Anchored then
-                    mob.HumanoidRootPart.Anchored = false
+                    -- Giữ quái cố định
+                    local bodyVelocity = Instance.new("BodyVelocity")
+                    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                    bodyVelocity.Parent = mob.HumanoidRootPart
+
+                    -- Tween quái đến vị trí
+                    local tween = TweenService:Create(
+                        mob.HumanoidRootPart,
+                        TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                        {CFrame = CFrame.new(targetCFrame.X, mob.HumanoidRootPart.Position.Y, targetCFrame.Z)}
+                    )
+                    tween:Play()
+                    tween.Completed:Wait()
+                    gathered = gathered + 1
                 end
-
-                -- Giữ quái cố định
-                local bodyVelocity = Instance.new("BodyVelocity")
-                bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                bodyVelocity.Parent = mob.HumanoidRootPart
-
-                -- Tween quái đến vị trí
-                local tween = TweenService:Create(
-                    mob.HumanoidRootPart,
-                    TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                    {CFrame = CFrame.new(targetCFrame.X, mob.HumanoidRootPart.Position.Y, targetCFrame.Z)}
-                )
-                tween:Play()
-                tween.Completed:Wait()
-                gathered = gathered + 1
             end
         end
     end
@@ -147,12 +151,14 @@ local function OnCharacterAdded(character)
         return totalMobs == deadCount
     end
 
-    -- 🔥 **Di chuyển qua các điểm và gom quái**
+    -- 🔥 **Di chuyển qua từng điểm `CFT` và gom quái**
     local function MoveThroughPoints(character)
+        local speed = 100 -- ⚡ Tốc độ di chuyển
+
         for _, targetCFrame in ipairs(CFT) do
-            TweenToPosition(character, targetCFrame)
+            TweenToPosition(character, targetCFrame, speed)
             task.wait(1)
-            GatherMobs()
+            GatherMobs(targetCFrame) -- 🛠 Gom quái vào điểm hiện tại
             while not AllMobsDeadOrBugged() do
                 task.wait(0.2)
             end
