@@ -7,19 +7,19 @@ local function GetCharacter()
     return character
 end
 
-local function ApplyFlight(character)
+local function ApplyFlight(character, fixedY)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        -- Giữ nhân vật trên không trung
+        -- Giữ nhân vật cố định ở độ cao nhất định
         local bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bodyGyro.CFrame = humanoidRootPart.CFrame
         bodyGyro.Parent = humanoidRootPart
 
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0, 1, 0) -- Giữ nhân vật lơ lửng
-        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVelocity.Parent = humanoidRootPart
+        local bodyPosition = Instance.new("BodyPosition")
+        bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyPosition.Position = Vector3.new(humanoidRootPart.Position.X, fixedY, humanoidRootPart.Position.Z)
+        bodyPosition.Parent = humanoidRootPart
     end
 end
 
@@ -40,7 +40,6 @@ local function DisableNoclip(character)
 end
 
 local function OnCharacterAdded(character)
-    ApplyFlight(character)
     local level = player.Data.Level.Value  
     local NameQuest, LevelQ, CFT, CFQ, Ms
 
@@ -77,13 +76,17 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
+    -- 📌 Giữ nhân vật cố định ở độ cao theo CFT
+    local fixedY = CFT[1].Y + 10 -- Giữ nhân vật cao hơn điểm farm một khoảng
+    ApplyFlight(character, fixedY)
+
     function TweenToPosition(character, targetPosition)
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         if humanoidRootPart then
             local currentPosition = humanoidRootPart.Position
             if (currentPosition - targetPosition).magnitude > 3 then -- Chỉ tween nếu vị trí thay đổi
                 EnableNoclip(character) -- 🔥 Bật Noclip trước khi Tween
-                local targetCFrame = CFrame.new(targetPosition.X, targetPosition.Y, targetPosition.Z)
+                local targetCFrame = CFrame.new(targetPosition.X, fixedY, targetPosition.Z) -- Giữ Y cố định
                 local tween = TweenService:Create(
                     humanoidRootPart,
                     TweenInfo.new(3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
