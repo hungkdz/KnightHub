@@ -1,7 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local player = game.Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local function GetCharacter()
     local character = player.Character or player.CharacterAdded:Wait()
@@ -24,9 +23,7 @@ local function ApplyFlight(character)
         -- 🔄 Duy trì trên không
         task.spawn(function()
             while character and character.Parent do
-                if bodyVelocity then
-                    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                end
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
                 task.wait(0.1)
             end
         end)
@@ -42,13 +39,13 @@ local function OnCharacterAdded(character)
     if level >= 1 and level <= 9 then
         NameQuest = "BanditQuest1"
         LevelQ = 1
-        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265, 40, 1592)}
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619)}
         CFQ = CFrame.new(1050, 16, 1540)  
         Ms = "Bandit"
     elseif level >= 10 and level <= 14 then
         NameQuest = "JungleQuest"
         LevelQ = 1
-        CFT = {CFrame.new(-1673, 30, -73), CFrame.new(-1570, 30, 339), CFrame.new(-1552, 30, 22)}
+        CFT = {CFrame.new(-1673, 30, -73), CFrame.new(-1570, 30, 339)}
         CFQ = CFrame.new(-1600, 36, 150)  
         Ms = "Monkey"
     elseif level >= 15 and level <= 29 then
@@ -60,13 +57,13 @@ local function OnCharacterAdded(character)
     elseif level >= 30 and level <= 39 then
         NameQuest = "BuggyQuest1"
         LevelQ = 1
-        CFT = {CFrame.new(-1160, 18, 3929), CFrame.new(-1264, 18, 3903), CFrame.new(-943, 30, 3973)}
+        CFT = {CFrame.new(-1160, 18, 3929), CFrame.new(-1264, 18, 3903)}
         CFQ = CFrame.new(-1130, 4, 3820)  
         Ms = "Pirate"
     elseif level >= 40 and level <= 59 then
         NameQuest = "BuggyQuest1"
         LevelQ = 2
-        CFT = {CFrame.new(-1204, 30, 4286), CFrame.new(-962, 30, 4312), CFrame.new(-1333, 30, 4227)}
+        CFT = {CFrame.new(-1204, 30, 4286), CFrame.new(-962, 30, 4312)}
         CFQ = CFrame.new(-1140, 4, 3827)  
         Ms = "Brute"
     end
@@ -118,22 +115,36 @@ local function OnCharacterAdded(character)
 
     -- 🔥 **Kiểm tra quái lỗi hoặc còn sống**
     local function AllMobsDeadOrBugged()
-        local count = 0
+        local deadCount = 0
+        local totalMobs = 0
+        local hasBuggedMob = false
+
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms then
                 local humanoid = mob:FindFirstChildOfClass("Humanoid")
-                if humanoid and humanoid.Health > 0 then
-                    -- 🔄 Kiểm tra quái có mất máu không
-                    local oldHealth = humanoid.Health
-                    task.wait(3) -- Chờ 3 giây
-                    if humanoid.Health == oldHealth then
-                        return true -- Quái bị lỗi, bỏ qua
+                if humanoid then
+                    totalMobs = totalMobs + 1
+                    if humanoid.Health <= 0 then
+                        deadCount = deadCount + 1
+                    else
+                        -- 🔄 Kiểm tra quái có mất máu không
+                        local oldHealth = humanoid.Health
+                        task.wait(3) -- Chờ 3 giây
+                        if humanoid.Health == oldHealth then
+                            hasBuggedMob = true
+                        end
                     end
-                    count = count + 1
                 end
             end
         end
-        return count == 0
+
+        -- Nếu ít nhất 1 quái chết và có 1 con bị lỗi → bỏ qua, di chuyển tiếp
+        if deadCount > 0 and hasBuggedMob then
+            return true
+        end
+
+        -- Nếu tất cả quái đều đã chết → di chuyển tiếp
+        return totalMobs == deadCount
     end
 
     -- 🔥 **Di chuyển qua các điểm và gom quái**
