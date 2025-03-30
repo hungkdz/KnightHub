@@ -10,20 +10,18 @@ end
 local function ApplyFlight(character, fixedY)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        -- Giữ nhân vật không rơi xuống bằng BodyPosition
+        -- 🔥 Giữ nhân vật lơ lửng bằng BodyVelocity
         local bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bodyGyro.CFrame = humanoidRootPart.CFrame
         bodyGyro.Parent = humanoidRootPart
 
-        local bodyPosition = Instance.new("BodyPosition")
-        bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyPosition.Position = Vector3.new(humanoidRootPart.Position.X, fixedY, humanoidRootPart.Position.Z)
-        bodyPosition.D = 100 -- Giảm dao động
-        bodyPosition.P = 50000 -- Tăng lực giữ
-        bodyPosition.Parent = humanoidRootPart
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0) -- Nhỏ để giữ nhân vật trên không
+        bodyVelocity.Parent = humanoidRootPart
 
-        humanoidRootPart.Anchored = false -- Đảm bảo nhân vật không bị cố định cứng
+        humanoidRootPart.Anchored = false -- Đảm bảo không bị cố định cứng
     end
 end
 
@@ -80,7 +78,7 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    -- 📌 Giữ nhân vật ở trên không trung (Y + 10)
+    -- 📌 Giữ nhân vật ở trên không trung theo danh sách CFT
     local fixedY = CFT[1].Y + 10
     ApplyFlight(character, fixedY)
 
