@@ -93,12 +93,11 @@ local function OnCharacterAdded(character)
             if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") then
                 local targetCFrame = CFT[1]
 
-                -- Xóa `Anchored` nếu có
                 if mob.HumanoidRootPart.Anchored then
                     mob.HumanoidRootPart.Anchored = false
                 end
 
-                -- Thêm BodyVelocity để giữ quái cố định
+                -- Giữ quái cố định
                 local bodyVelocity = Instance.new("BodyVelocity")
                 bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
                 bodyVelocity.Velocity = Vector3.new(0, 0, 0)
@@ -117,22 +116,27 @@ local function OnCharacterAdded(character)
         end
     end
 
-    -- 🔥 **Kiểm tra quái còn sống hoặc bị lỗi**
+    -- 🔥 **Kiểm tra quái lỗi hoặc còn sống**
     local function AllMobsDeadOrBugged()
         local count = 0
         for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
             if mob.Name == Ms then
                 local humanoid = mob:FindFirstChildOfClass("Humanoid")
                 if humanoid and humanoid.Health > 0 then
+                    -- 🔄 Kiểm tra quái có mất máu không
+                    local oldHealth = humanoid.Health
+                    task.wait(3) -- Chờ 3 giây
+                    if humanoid.Health == oldHealth then
+                        return true -- Quái bị lỗi, bỏ qua
+                    end
                     count = count + 1
                 end
             end
         end
-        -- Nếu chỉ còn 1-2 con nhưng không chết => có thể bị lỗi
-        return count <= 1
+        return count == 0
     end
 
-    -- 🔥 **Di chuyển giữa các điểm và gom quái**
+    -- 🔥 **Di chuyển qua các điểm và gom quái**
     local function MoveThroughPoints(character)
         for _, targetCFrame in ipairs(CFT) do
             TweenToPosition(character, targetCFrame)
