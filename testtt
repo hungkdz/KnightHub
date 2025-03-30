@@ -1,137 +1,136 @@
--- 🛠 Khai báo dịch vụ
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- 🏃‍♂️ Khai báo nhân vật người chơi
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
--- 🔄 Hàm cập nhật khi nhân vật respawn
-local function onCharacterAdded(char)
-    character = char
-    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-end
-player.CharacterAdded:Connect(onCharacterAdded)
-
--- 🎲 Hàm tạo một điểm gom quái ngẫu nhiên trong phạm vi 125
-local function getRandomGatherPosition()
-    local randomOffsetX = math.random(-125, 125)
-    local randomOffsetZ = math.random(-125, 125)
-    local heightOffset = 10  -- Độ cao của nhân vật để tránh bị tấn công
-    return humanoidRootPart.Position + Vector3.new(randomOffsetX, 0, randomOffsetZ), heightOffset
+local function GetCharacter()
+    return player.Character or player.CharacterAdded:Wait()
 end
 
--- 🔍 Hàm lấy danh sách tất cả quái trong phạm vi
-local function getNearbyEnemies(range)
-    local enemies = {}
+local function ApplyFlight(character)
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyGyro.CFrame = humanoidRootPart.CFrame
+        bodyGyro.Parent = humanoidRootPart
 
-    if not humanoidRootPart then return enemies end
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
+        bodyVelocity.Parent = humanoidRootPart
+    end
+end
 
-    for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-        if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChildOfClass("Humanoid") then
-            local enemyRoot = enemy:FindFirstChild("HumanoidRootPart")
-            local enemyHumanoid = enemy:FindFirstChildOfClass("Humanoid")
+local function OnCharacterAdded(character)
+    local level = player.Data.Level.Value  
+    local NameQuest, LevelQ, CFT, CFQ, Ms
 
-            -- Kiểm tra quái còn sống không
-            if enemyHumanoid.Health > 0 then
-                local distance = (enemyRoot.Position - humanoidRootPart.Position).Magnitude
+    if level >= 1 and level <= 9 then
+        NameQuest = "BanditQuest1"
+        LevelQ = 1
+        CFT = {CFrame.new(943, 40, 1562), CFrame.new(1115, 40, 1619), CFrame.new(1265.79199, 40, 1592.849)}
+        CFQ = CFrame.new(1050, 16, 1540)
+        Ms = "Bandit"
+    elseif level >= 10 and level <= 14 then
+        NameQuest = "JungleQuest"
+        LevelQ = 1
+        CFT = {CFrame.new(-1673.04834, 30, -73.7299271), CFrame.new(-1570.29041, 30, 339.327484), CFrame.new(-1552.57837, 30, 22.7689781)}
+        CFQ = CFrame.new(-1600, 36, 150)
+        Ms = "Monkey"
+    elseif level >= 15 and level <= 29 then
+        NameQuest = "JungleQuest"
+        LevelQ = 2
+        CFT = {CFrame.new(-1281.31323, 20, -509.142456), CFrame.new(-1216.53259, 20, -586.503235)}
+        CFQ = CFrame.new(-1600, 36, 150)
+        Ms = "Gorilla"
+    elseif level >= 30 and level <= 39 then
+        NameQuest = "BuggyQuest1"
+        LevelQ = 1
+        CFT = {CFrame.new(-1160.14258, 18, 3929.40723), CFrame.new(-1264.62415, 18, 3903.80957), CFrame.new(-943.844299, 30, 3973.2478)}
+        CFQ = CFrame.new(-1130, 4, 3820)
+        Ms = "Pirate"
+    elseif level >= 40 and level <= 59 then
+        NameQuest = "BuggyQuest1"
+        LevelQ = 2
+        CFT = {CFrame.new(-1204.29492, 30, 4286.92773), CFrame.new(-962.269287, 30, 4312.79834), CFrame.new(-1333.89319, 30, 4227.29639)}
+        CFQ = CFrame.new(-1140.176, 4.752, 3827.405)
+        Ms = "Brute"
+    end
 
-                -- Chỉ thêm quái nếu trong phạm vi
-                if distance <= range then
-                    table.insert(enemies, enemy)
+    ApplyFlight(character)
+
+    function TweenToPosition(character, targetPosition, speed)
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            local distance = (humanoidRootPart.Position - targetPosition).magnitude
+            local tweenTime = distance / speed
+            local tween = TweenService:Create(
+                humanoidRootPart,
+                TweenInfo.new(tweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                {CFrame = CFrame.new(targetPosition)}
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+    end
+
+    function GatherMobs(targetCFrame)
+        local gathered = 0
+        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if gathered >= 3 then break end
+            if mob.Name == Ms and mob:FindFirstChild("HumanoidRootPart") and (mob.HumanoidRootPart.Position - targetCFrame.Position).magnitude <= 125 then
+                if mob.HumanoidRootPart.Anchored then
+                    mob.HumanoidRootPart.Anchored = false
+                end
+
+                local bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                bodyVelocity.Parent = mob.HumanoidRootPart
+
+                local tween = TweenService:Create(
+                    mob.HumanoidRootPart,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
+                    {CFrame = targetCFrame}
+                )
+                tween:Play()
+                gathered = gathered + 1
+            end
+        end
+    end
+
+    function AllMobsDead()
+        local count = 0
+        local mobWithIssue = false
+        for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
+            if mob.Name == Ms then
+                count = count + 1
+                if mob.Humanoid.Health == mob.Humanoid.MaxHealth then
+                    mobWithIssue = true
+                end
+            end
+        end
+        if count == 0 or mobWithIssue then
+            return true
+        end
+        return false
+    end
+
+    function MoveThroughPoints(character)
+        while true do
+            for _, targetCFrame in ipairs(CFT) do
+                TweenToPosition(character, targetCFrame.Position, 150)
+                task.wait(1)
+                GatherMobs(targetCFrame)
+                while not AllMobsDead() do
+                    task.wait(0.2)
                 end
             end
         end
     end
 
-    return enemies
+    MoveThroughPoints(character)
 end
 
--- 🚀 Hàm dùng Tween để di chuyển quái đến điểm golocal TweenService = game:GetService("TweenService")
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
--- 🔥 Giữ nhân vật trên không bằng BodyVelocity
-local function ApplyFlight()
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.Parent = humanoidRootPart
-
-    -- 🔁 Duy trì trên không
-    task.spawn(function()
-        while task.wait() do
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        end
-    end)
-end
-
-ApplyFlight()
-
--- 🌀 Gom quái liên tục tween về đúng vị trí
-local function GatherMobs(targetPosition)
-    local gathered = 0
-    for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-        if gathered >= 3 then break end -- 🔥 Giới hạn 3 quái
-        if mob.Name == TargetMob and mob:FindFirstChild("HumanoidRootPart") then
-            local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
-
-            -- 🔥 Liên tục tween quái về đúng vị trí
-            task.spawn(function()
-                while mob.Parent and mob:FindFirstChild("HumanoidRootPart") do
-                    local tween = TweenService:Create(
-                        mob.HumanoidRootPart,
-                        TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
-                        {CFrame = targetCFrame}
-                    )
-                    tween:Play()
-                    task.wait(0.2)
-                end
-            end)
-
-            gathered = gathered + 1
-        end
-    end
-end
-
--- 🔥 Kiểm tra nếu tất cả quái đã chết
-local function AllMobsDead()
-    for _, mob in pairs(game.Workspace.Enemies:GetChildren()) do
-        if mob.Name == TargetMob then
-            return false
-        end
-    end
-    return true
-end
-
--- 📍 Di chuyển qua từng điểm trong CFT
-local function MoveThroughPoints()
-    for _, targetCFrame in ipairs(TargetCFT) do
-        TweenToPosition(targetCFrame, 120) -- 🔥 Tween với tốc độ 50
-        task.wait(1)
-        GatherMobs(targetCFrame.Position)
-
-        while not AllMobsDead() do
-            task.wait(0.5)
-        end
-    end
-end
-
--- 🎯 Bắt đầu farm
-local function StartFarming()
-    local level = player.Data.Level.Value
-    local NameQuest, LevelQ, CFT, CFQ, Ms = GetQuestInfo(level)
-
-    TargetQuest = NameQuest
-    TargetQuestLevel = LevelQ
-    TargetCFT = CFT
-    TargetCFQ = CFQ
-    TargetMob = Ms
-
-    MoveThroughPoints()
-end
-
-StartFarming()
+player.CharacterAdded:Connect(OnCharacterAdded)
+OnCharacterAdded(GetCharacter())
