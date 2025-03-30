@@ -10,7 +10,7 @@ end
 local function ApplyFlight(character, fixedY)
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if humanoidRootPart then
-        -- Giữ nhân vật cố định ở độ cao nhất định
+        -- Giữ nhân vật không rơi xuống bằng BodyPosition
         local bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
         bodyGyro.CFrame = humanoidRootPart.CFrame
@@ -19,7 +19,11 @@ local function ApplyFlight(character, fixedY)
         local bodyPosition = Instance.new("BodyPosition")
         bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         bodyPosition.Position = Vector3.new(humanoidRootPart.Position.X, fixedY, humanoidRootPart.Position.Z)
+        bodyPosition.D = 100 -- Giảm dao động
+        bodyPosition.P = 50000 -- Tăng lực giữ
         bodyPosition.Parent = humanoidRootPart
+
+        humanoidRootPart.Anchored = false -- Đảm bảo nhân vật không bị cố định cứng
     end
 end
 
@@ -76,8 +80,8 @@ local function OnCharacterAdded(character)
         Ms = "Brute"
     end
 
-    -- 📌 Giữ nhân vật cố định ở độ cao theo CFT
-    local fixedY = CFT[1].Y + 10 -- Giữ nhân vật cao hơn điểm farm một khoảng
+    -- 📌 Giữ nhân vật ở trên không trung (Y + 10)
+    local fixedY = CFT[1].Y + 10
     ApplyFlight(character, fixedY)
 
     function TweenToPosition(character, targetPosition)
@@ -105,6 +109,10 @@ local function OnCharacterAdded(character)
                 local targetPosition = CFT[1].Position
                 if targetPosition then
                     local targetCFrame = CFrame.new(targetPosition.X, mob.HumanoidRootPart.Position.Y, targetPosition.Z)
+
+                    -- 🛠️ Gỡ Anchored trước khi gom quái
+                    mob.HumanoidRootPart.Anchored = false
+
                     local tween = TweenService:Create(
                         mob.HumanoidRootPart,
                         TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out),
@@ -112,7 +120,6 @@ local function OnCharacterAdded(character)
                     )
                     tween:Play()
                     tween.Completed:Wait()
-                    mob.HumanoidRootPart.Anchored = true
                 end
             end
         end
