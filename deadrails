@@ -22,9 +22,6 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" }), -- tab
 }
-
-local UserInputService = game:GetService("UserInputService") -- Khai báo UserInputService
-
 local ic = Instance.new("ScreenGui")
 ic.Parent = game.CoreGui
 ic.Name = "knight"
@@ -116,12 +113,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Button with unlockcam function
 Tabs.Main:AddButton({
-    Title = "Unlock Camera",
-    Description = "Unlock the camera for Classic mode",
-    Callback = function()
-        local player = game.Players.LocalPlayer or game.Players.PlayerAdded:Wait()
-        player.CameraMode = Enum.CameraMode.Classic
-    end
+    Title = "Button",
+    Callback =
 })
