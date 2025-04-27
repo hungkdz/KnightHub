@@ -16,6 +16,97 @@ local Window = Fluent:CreateWindow({
     Theme = "Dark"
 })
 
+local ic = Instance.new("ScreenGui")
+ic.Parent = game.CoreGui
+ic.Name = "knight"
+ic.ClipToDeviceSafeArea = true
+ic.Enabled = true
+ic.ResetOnSpawn = true
+ic.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ic.Archivable = true
+ic.AutoLocalize = true
+
+-- Create Frame
+local ic2 = Instance.new("Frame")
+ic2.Parent = ic
+ic2.Name = "dz"
+ic2.AnchorPoint = Vector2.new(0, 1)
+ic2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ic2.BackgroundTransparency = 0
+ic2.BorderSizePixel = 1
+ic2.Position = UDim2.new(0, 15, 0.2, 5)
+ic2.Size = UDim2.new(0, 50, 0, 50)
+
+-- Round corners
+local ic3 = Instance.new("UICorner")
+ic3.CornerRadius = UDim.new(1, 0)
+ic3.Archivable = true
+ic3.Parent = ic2
+
+-- TextButton
+local ic4 = Instance.new("TextButton")
+ic4.Parent = ic2
+ic4.Active = true
+ic4.AnchorPoint = Vector2.new(0, 0)
+ic4.BackgroundTransparency = 1
+ic4.Size = UDim2.new(1, 0, 1, 0)
+ic4.Text = ""
+
+-- ImageLabel
+local ic5 = Instance.new("ImageLabel")
+ic5.Parent = ic2
+ic5.AnchorPoint = Vector2.new(0.5, 0.5)
+ic5.BackgroundTransparency = 1
+ic5.Position = UDim2.new(0.5, 0, 0.5, 0)
+ic5.Size = UDim2.new(0, 40, 0, 40)
+ic5.Image = "rbxassetid://71222902950411" -- Ensure this is a valid image ID
+
+-- Minimize the window when the TextButton (ic4) is clicked
+local originalImageSize = UDim2.new(0, 30, 0, 30)
+local originalFrameBackgroundTransparency = 0.25
+local newImageSize = UDim2.new(0, 40, 0, 40)
+local newFrameBackgroundTransparency = 0
+
+local isOriginalState = true
+
+-- Sự kiện MouseButton1Click cho TextButton
+ic4.MouseButton1Click:Connect(function()
+    Window:Minimize()
+
+    if isOriginalState then
+        -- Thay đổi các thuộc tính sang trạng thái mới
+        ic5.Size = newImageSize
+        ic2.BackgroundTransparency = newFrameBackgroundTransparency
+    else
+        -- Khôi phục các thuộc tính về trạng thái gốc
+        ic5.Size = originalImageSize
+        ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+    end
+
+    isOriginalState = not isOriginalState
+end)
+
+-- Minimize the window when the Left Control key is pressed
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end  -- Ignore if the input is processed by the game
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.LeftControl then
+        -- Minimize the window
+        Window:Minimize()
+
+        if isOriginalState then
+            -- Change the properties when minimized
+            ic5.Size = newImageSize
+            ic2.BackgroundTransparency = newFrameBackgroundTransparency
+        else
+            -- Reset the properties when not minimized
+            ic5.Size = originalImageSize
+            ic2.BackgroundTransparency = originalFrameBackgroundTransparency
+        end
+
+        isOriginalState = not isOriginalState
+    end
+end)
+
 local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" }),
 }
@@ -32,6 +123,7 @@ local noclipConnection
 
 Tabs.Main:AddButton({
     Title = "Noclip",
+    Description = "Maybe error",
     Callback = function()
         if noclipConnection then
             noclipConnection:Disconnect()
@@ -49,18 +141,5 @@ Tabs.Main:AddButton({
                 end
             end
         end)
-    end
-})
-
-Tabs.Main:AddButton({
-    Title = "Speed Boost",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-        if humanoid then
-            humanoid.WalkSpeed = 100 -- 👈 chỉnh số lớn hơn để chạy nhanh hơn (default Roblox là 16)
-        end
     end
 })
