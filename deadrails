@@ -112,8 +112,3 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         isOriginalState = not isOriginalState
     end
 end)
-
-Tabs.Main:AddButton({
-    Title = "Button",
-    Callback =
-})
