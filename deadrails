@@ -51,3 +51,16 @@ Tabs.Main:AddButton({
         end)
     end
 })
+
+Tabs.Main:AddButton({
+    Title = "Speed Boost",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid.WalkSpeed = 100 -- 👈 chỉnh số lớn hơn để chạy nhanh hơn (default Roblox là 16)
+        end
+    end
+})
