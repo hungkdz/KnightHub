@@ -121,3 +121,45 @@ Tabs.Main:AddButton({
         player.CameraMode = Enum.CameraMode.Classic
     end
 })
+
+local noclipEnabled = false
+local RunService = game:GetService("RunService")
+local noclipConnection
+
+Tabs.Main:AddToggle({
+    Title = "Noclip",
+    Default = false,
+    Callback = function(state)
+        noclipEnabled = state
+
+        if noclipEnabled then
+            -- Bắt đầu Noclip
+            noclipConnection = RunService.Stepped:Connect(function()
+                local character = game.Players.LocalPlayer.Character
+                if character then
+                    for _, part in pairs(character:GetDescendants()) do
+                        if part:IsA("BasePart") and part.CanCollide then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            -- Tắt Noclip
+            if noclipConnection then
+                noclipConnection:Disconnect()
+                noclipConnection = nil
+            end
+
+            -- Khôi phục lại CanCollide = true
+            local character = game.Players.LocalPlayer.Character
+            if character then
+                for _, part in pairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+})
