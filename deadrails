@@ -126,40 +126,21 @@ local noclipEnabled = false
 local RunService = game:GetService("RunService")
 local noclipConnection
 
-Tabs.Main:AddToggle({
+Tabs.Main:AddButton({
     Title = "Noclip",
-    Default = false,
-    Callback = function(state)
-        noclipEnabled = state
+    Callback = function()
+        local RunService = game:GetService("RunService")
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
 
-        if noclipEnabled then
-            -- Bắt đầu Noclip
-            noclipConnection = RunService.Stepped:Connect(function()
-                local character = game.Players.LocalPlayer.Character
-                if character then
-                    for _, part in pairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") and part.CanCollide then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end)
-        else
-            -- Tắt Noclip
-            if noclipConnection then
-                noclipConnection:Disconnect()
-                noclipConnection = nil
-            end
-
-            -- Khôi phục lại CanCollide = true
-            local character = game.Players.LocalPlayer.Character
+        RunService.Stepped:Connect(function()
             if character then
-                for _, part in pairs(character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true
+                for _, part in ipairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide == true then
+                        part.CanCollide = false
                     end
                 end
             end
-        end
+        end)
     end
 })
