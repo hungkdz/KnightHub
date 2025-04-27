@@ -116,7 +116,7 @@ end)
 Tabs.Main:AddButton({
     Title = "Button",
     Description = "Very important button",
-    Callback = function unlockcam()
+    Callback = function ()
         local player = game.Players.LocalPlayer or game.Players.PlayerAdded:Wait()
         player.CameraMode = Enum.CameraMode.Classic
     end
