@@ -1,6 +1,7 @@
 -- Load Fluent UI Library
 local Library = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local UserInputService = game:GetService("UserInputService")
 
 -- Check if Fluent is loaded correctly
 if not Library then
@@ -112,3 +113,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         isOriginalState = not isOriginalState
     end
 end)
+
+Tabs.Main:AddButton({
+    Title = "Unlock Camera",
+    Callback = function()
+        local player = game.Players.LocalPlayer or game.Players.PlayerAdded:Wait()
+        player.CameraMode = Enum.CameraMode.Classic
+    end
+})
