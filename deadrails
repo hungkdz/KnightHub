@@ -2,6 +2,15 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 local SaveData = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local UserInputService = game:GetService("UserInputService")
 
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local player = game.Players.LocalPlayer or game.Players.PlayerAdded:Wait()
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = Workspace:WaitForChild(player.Name):FindFirstChildOfClass("Humanoid")
+
 if not Fluent then
     warn("Fluent library failed to load.")
     return
@@ -114,7 +123,6 @@ local Tabs = {
 Tabs.Main:AddButton({
     Title = "Unlock Camera",
     Callback = function()
-        local player = game.Players.LocalPlayer or game.Players.PlayerAdded:Wait()
         player.CameraMode = Enum.CameraMode.Classic
     end
 })
@@ -123,13 +131,10 @@ local noclipConnection
 
 Tabs.Main:AddButton({
     Title = "Noclip",
-    Description = "Maybe error",
     Callback = function()
         if noclipConnection then
             noclipConnection:Disconnect()
         end
-
-        local player = game.Players.LocalPlayer
 
         noclipConnection = game:GetService("RunService").Stepped:Connect(function()
             local character = player.Character
@@ -141,5 +146,13 @@ Tabs.Main:AddButton({
                 end
             end
         end)
+    end
+})
+
+Tabs.Main:AddButton({
+    Title = "JumpPower Boost",
+    Callback = function()
+        humanoid.JumpPower = 68
+        humanoid.UseJumpPower = true
     end
 })
