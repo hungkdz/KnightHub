@@ -268,10 +268,10 @@ Tabs.ClassShop:AddButton({
 })
 
 Tabs.ClassShop:AddButton({
-    Title = "Equip Nercromancer",
+    Title = "Equip Necromancer",
     Callback = function()
         local args = {
-            "Nercromancer"
+            "Necromancer"
         }
         
         local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
