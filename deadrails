@@ -119,6 +119,7 @@ end)
 local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" }),
     ClassShop = Window:AddTab({ Title = "Class Shop" }),
+    TrainShop = Window:AddTab({ Title = "Train Shop" })
 }
 
 Tabs.Main:AddButton({
@@ -428,6 +429,65 @@ Tabs.ClassShop:AddButton({
         local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
         
         BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+
+
+
+Tabs.TrainShop:AddButton({
+    Title = "Equip Cattle Car",
+    Callback = function()
+        local args = {
+            "cattle"
+        }
+
+        local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
+        local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
+        
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.TrainShop:AddButton({
+    Title = "Equip Gold Rush",
+    Callback = function()
+        local args = {
+            "golden"
+        }
+
+        local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
+        local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
+        
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.TrainShop:AddButton({
+    Title = "Equip Armored Train",
+    Callback = function()
+        local args = {
+            "armored"
+        }
+
+        local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
+        local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
+        
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.TrainShop:AddButton({
+    Title = "Equip Default",
+    Callback = function()
+        local args = {
+            "default"
+        }
+
+        local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
+        local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
+        
         EClass:FireServer(unpack(args))
     end
 })
