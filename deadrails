@@ -446,7 +446,8 @@ Tabs.TrainShop:AddButton({
         local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
         local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
         
-        EClass:FireServer(unpack(args))
+        BTrain:FireServer(unpack(args))
+        ETrain:FireServer(unpack(args))
     end
 })
 
@@ -460,7 +461,8 @@ Tabs.TrainShop:AddButton({
         local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
         local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
         
-        EClass:FireServer(unpack(args))
+        BTrain:FireServer(unpack(args))
+        ETrain:FireServer(unpack(args))
     end
 })
 
@@ -474,7 +476,8 @@ Tabs.TrainShop:AddButton({
         local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
         local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
         
-        EClass:FireServer(unpack(args))
+        BTrain:FireServer(unpack(args))
+        ETrain:FireServer(unpack(args))
     end
 })
 
@@ -488,6 +491,7 @@ Tabs.TrainShop:AddButton({
         local BTrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyTrain")
         local ETrain = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipTrain")
         
-        EClass:FireServer(unpack(args))
+        BTrain:FireServer(unpack(args))
+        ETrain:FireServer(unpack(args))
     end
 })
