@@ -118,6 +118,7 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Main Farm" }),
+    ClassShop = Window:AddTab({ Title = "Class Shop" }),
 }
 
 Tabs.Main:AddButton({
@@ -154,5 +155,279 @@ Tabs.Main:AddButton({
     Callback = function()
         humanoid.JumpPower = 68
         humanoid.UseJumpPower = true
+    end
+})
+
+
+
+
+
+
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip None",
+    Callback = function()
+        local args = {
+            "None"
+        }
+        
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Horse",
+    Callback = function()
+        local args = {
+            "Horse"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Musician",
+    Callback = function()
+        local args = {
+            "Musician"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Miner",
+    Callback = function()
+        local args = {
+            "Miner"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Doctor",
+    Callback = function()
+        local args = {
+            "Doctor"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Arsonist",
+    Callback = function()
+        local args = {
+            "Arsonist"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Packmaster",
+    Callback = function()
+        local args = {
+            "Packmaster"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Nercromancer",
+    Callback = function()
+        local args = {
+            "Nercromancer"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Conductor",
+    Callback = function()
+        local args = {
+            "Conductor"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Werewolf",
+    Callback = function()
+        local args = {
+            "Werewolf"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip The Alamo",
+    Callback = function()
+        local args = {
+            "Alamo"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Cowboy",
+    Callback = function()
+        local args = {
+            "Cowboy"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip High Roller",
+    Callback = function()
+        local args = {
+            "HighRoller"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Priest",
+    Callback = function()
+        local args = {
+            "Priest"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Zombie",
+    Callback = function()
+        local args = {
+            "Zombie"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Vampire",
+    Callback = function()
+        local args = {
+            "Vampire"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Survivalist",
+    Callback = function()
+        local args = {
+            "Survivalist"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
+    end
+})
+
+Tabs.ClassShop:AddButton({
+    Title = "Equip Ironclad",
+    Callback = function()
+        local args = {
+            "Ironclad"
+        }
+        
+        local BClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("BuyClass")
+        local EClass = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Network"):WaitForChild("RemoteEvent"):WaitForChild("EquipClass")
+        
+        BClass:FireServer(unpack(args))
+        EClass:FireServer(unpack(args))
     end
 })
