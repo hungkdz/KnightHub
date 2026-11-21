@@ -2,7 +2,7 @@
   "latest_version": "3.0",
   "download_url": "https://github.com/hungkdz/KnightHub/releases/download/1.0/KitTool.exe",
   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "dll_version": "6.2",
+  "dll_version": "6.3",
   "dll_url": "https://github.com/hungkdz/KnightHub/releases/download/1.0/KitTool_Core_v4.3.kbin",
   "dll_sha256": "c2d529bc95422288c420359b02207ffca801d3994582aac305ec2ab04f75ec5e"
 }
